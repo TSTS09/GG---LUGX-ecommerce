@@ -1,0 +1,140 @@
+body {
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #ffffff;
+    padding-top: 64px;
+}
+
+.container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    width: 95%;
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+
+h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 30px;
+    color: #333;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Placeholder styling for different browsers */
+input::placeholder {
+    font-family: 'Space Grotesk', sans-serif;
+    color: #666;
+    opacity: 1; /* Firefox */
+}
+
+input:-ms-input-placeholder { /* Internet Explorer 10-11 */
+    font-family: 'Space Grotesk', sans-serif;
+    color: #666;
+}
+
+input::-ms-input-placeholder { /* Microsoft Edge */
+    font-family: 'Space Grotesk', sans-serif;
+    color: #666;
+}
+
+.password-container {
+    position: relative;
+}
+
+.password-container input {
+    width: 100%;
+    padding-right: 40px;
+}
+
+.password-container .toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    background-color: #c82333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+button:hover {
+    background-color: #c82333;
+}
+
+#message {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 16px;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.text-center {
+    text-align: center;
+    margin-top: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.text-center a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+.text-center a:hover {
+    text-decoration: underline;
+}
+
+footer {
+    width: 100%;
+    margin-top: auto;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+}
