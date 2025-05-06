@@ -1,0 +1,242 @@
+/* Admin Panel Styles */
+
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Admin Container */
+.admin-container {
+    padding: 30px;
+    margin-top: 100px;
+    margin-bottom: 50px;
+}
+
+/* Form Styles */
+.form-container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.form-title {
+    color: #ee626b;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.form-control:focus {
+    border-color: #ee626b;
+    box-shadow: 0 0 0 0.2rem rgba(238, 98, 107, 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: #ee626b;
+    border-color: #ee626b;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover, 
+.btn-primary:focus {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover, 
+.btn-secondary:focus {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Table Styles */
+.table-container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.table-title {
+    color: #ee626b;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(238, 98, 107, 0.05);
+}
+
+/* Image Preview */
+.image-preview {
+    max-width: 100px;
+    max-height: 100px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+/* Alert Messages */
+.alert {
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 15px;
+    }
+    
+    .form-container, 
+    .table-container {
+        padding: 15px;
+    }
+}
+/* Admin Panel Styles */
+
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Admin Container */
+.admin-container {
+    padding: 30px;
+    margin-top: 100px;
+    margin-bottom: 50px;
+}
+
+/* Form Styles */
+.form-container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.form-title {
+    color: #ee626b;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.form-control:focus {
+    border-color: #ee626b;
+    box-shadow: 0 0 0 0.2rem rgba(238, 98, 107, 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: #ee626b;
+    border-color: #ee626b;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover, 
+.btn-primary:focus {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover, 
+.btn-secondary:focus {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Table Styles */
+.table-container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.table-title {
+    color: #ee626b;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(238, 98, 107, 0.05);
+}
+
+/* Image Preview */
+.image-preview {
+    max-width: 100px;
+    max-height: 100px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+/* Alert Messages */
+.alert {
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 15px;
+    }
+    
+    .form-container, 
+    .table-container {
+        padding: 15px;
+    }
+}
