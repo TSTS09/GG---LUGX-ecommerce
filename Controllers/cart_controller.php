@@ -121,5 +121,94 @@ class CartController {
             return 0;
         }
     }
+    
+    /**
+     * Create a new order from cart items
+     * @param int $customer_id - Customer ID
+     * @param float $order_amount - Order amount
+     * @param string $invoice_no - Invoice number
+     * @param string $order_status - Order status
+     * @return int|bool - Order ID if successful, false otherwise
+     */
+    public function create_order_ctr($customer_id, $order_amount, $invoice_no, $order_status = 'Pending') {
+        try {
+            return $this->cartClass->create_order($customer_id, $order_amount, $invoice_no, $order_status);
+        } catch (Exception $e) {
+            error_log("Error in create_order_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Record payment
+     * @param int $order_id - Order ID
+     * @param string $payment_method - Payment method
+     * @param float $amount - Payment amount
+     * @param string $currency - Currency code
+     * @param string $transaction_id - Transaction ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function record_payment_ctr($order_id, $payment_method, $amount, $currency, $transaction_id) {
+        try {
+            return $this->cartClass->record_payment($order_id, $payment_method, $amount, $currency, $transaction_id);
+        } catch (Exception $e) {
+            error_log("Error in record_payment_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get order details
+     * @param int $order_id - Order ID
+     * @return array|bool - Order details if successful, false otherwise
+     */
+    public function get_order_details_ctr($order_id) {
+        try {
+            $order = $this->cartClass->get_order_details($order_id);
+            
+            if (!$order) {
+                return [
+                    'success' => false,
+                    'message' => 'Order not found',
+                    'data' => null
+                ];
+            }
+            
+            return [
+                'success' => true,
+                'data' => $order
+            ];
+        } catch (Exception $e) {
+            error_log("Error in get_order_details_ctr: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+    }
+    
+    /**
+     * Get order items
+     * @param int $order_id - Order ID
+     * @return array - Array of order items and their details
+     */
+    public function get_order_items_ctr($order_id) {
+        try {
+            $items = $this->cartClass->get_order_items($order_id);
+            
+            return [
+                'success' => true,
+                'data' => $items
+            ];
+        } catch (Exception $e) {
+            error_log("Error in get_order_items_ctr: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
 }
 ?>

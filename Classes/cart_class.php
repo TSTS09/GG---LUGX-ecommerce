@@ -262,5 +262,218 @@ class CartClass extends db_connection {
             return 0;
         }
     }
+
+    /**
+     * Create a new order from cart items
+     * @param int $customer_id - Customer ID
+     * @param float $order_amount - Order amount
+     * @param string $invoice_no - Invoice number
+     * @param string $order_status - Order status
+     * @return int|bool - Order ID if successful, false otherwise
+     */
+    public function create_order($customer_id, $order_amount, $invoice_no, $order_status = 'Pending') {
+        try {
+            $conn = $this->db_conn();
+            
+            // Create order
+            $sql = "INSERT INTO orders (customer_id, invoice_no, order_date, order_status, order_amount) 
+                    VALUES (?, ?, NOW(), ?, ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("issd", $customer_id, $invoice_no, $order_status, $order_amount);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+            
+            // Get the order ID
+            $order_id = $conn->insert_id;
+            
+            // Move cart items to order details
+            $this->move_cart_to_order_details($customer_id, $order_id);
+            
+            return $order_id;
+        } catch (Exception $e) {
+            error_log("Error creating order: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Move cart items to order details
+     * @param int $customer_id - Customer ID
+     * @param int $order_id - Order ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function move_cart_to_order_details($customer_id, $order_id) {
+        try {
+            $conn = $this->db_conn();
+            
+            // Get cart items
+            $cart_items = $this->get_cart_items($customer_id);
+            
+            if (empty($cart_items)) {
+                throw new Exception("No items in cart");
+            }
+            
+            // Begin transaction
+            $conn->begin_transaction();
+            
+            // Insert each cart item into order details
+            foreach ($cart_items as $item) {
+                $sql = "INSERT INTO orderdetails (order_id, product_id, qty) VALUES (?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                if (!$stmt) {
+                    throw new Exception("Prepare statement failed: " . $conn->error);
+                }
+                
+                $stmt->bind_param("iii", $order_id, $item['p_id'], $item['qty']);
+                if (!$stmt->execute()) {
+                    throw new Exception("Execute statement failed: " . $stmt->error);
+                }
+            }
+            
+            // Clear cart
+            $sql = "DELETE FROM cart WHERE c_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("i", $customer_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+            
+            // Commit transaction
+            $conn->commit();
+            
+            return true;
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            if (isset($conn) && $conn->ping()) {
+                $conn->rollback();
+            }
+            
+            error_log("Error moving cart to order details: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Record payment
+     * @param int $order_id - Order ID
+     * @param string $payment_method - Payment method
+     * @param float $amount - Payment amount
+     * @param string $currency - Currency code
+     * @param string $payment_date - Payment date
+     * @param string $transaction_id - Transaction ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function record_payment($order_id, $payment_method, $amount, $currency, $transaction_id) {
+        try {
+            $conn = $this->db_conn();
+            
+            // Insert payment record
+            $sql = "INSERT INTO payment (order_id, pay_method, amt, currency, payment_date, pay_id) 
+                    VALUES (?, ?, ?, ?, NOW(), ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("idsss", $order_id, $payment_method, $amount, $currency, $transaction_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+            
+            // Update order status
+            $sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("i", $order_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Error recording payment: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get order details
+     * @param int $order_id - Order ID
+     * @return array|bool - Order details if successful, false otherwise
+     */
+    public function get_order_details($order_id) {
+        try {
+            $conn = $this->db_conn();
+            
+            $sql = "SELECT o.*, c.customer_name, c.customer_email, c.customer_contact 
+                    FROM orders o 
+                    JOIN customer c ON o.customer_id = c.customer_id 
+                    WHERE o.order_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("i", $order_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+            
+            $result = $stmt->get_result();
+            return $result->fetch_assoc();
+        } catch (Exception $e) {
+            error_log("Error getting order details: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get order items
+     * @param int $order_id - Order ID
+     * @return array - Array of order items and their details
+     */
+    public function get_order_items($order_id) {
+        try {
+            $conn = $this->db_conn();
+            
+            $sql = "SELECT od.*, p.product_title, p.product_price, p.product_image, 
+                           (od.qty * p.product_price) as item_total 
+                    FROM orderdetails od 
+                    JOIN product p ON od.product_id = p.product_id 
+                    WHERE od.order_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+            
+            $stmt->bind_param("i", $order_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+            
+            $result = $stmt->get_result();
+            $items = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                $items[] = $row;
+            }
+            
+            return $items;
+        } catch (Exception $e) {
+            error_log("Error getting order items: " . $e->getMessage());
+            return [];
+        }
+    }
 }
-?>

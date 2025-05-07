@@ -44,6 +44,30 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     <link rel="stylesheet" href="../CSS/admin-styles.css">
     <link rel="stylesheet" href="../CSS/admin.css">
     <link rel="icon" href="../Images/logo.png" type="image/png">
+    
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .admin-container {
+            flex: 1 0 auto;
+            padding-bottom: 30px;
+        }
+        
+        footer {
+            flex-shrink: 0;
+            width: 100%;
+            margin-top: auto;
+        }
+    </style>
 </head>
 
 <body>
@@ -57,6 +81,17 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
         <div class="row">
             <div class="col-lg-12">
                 <h2><?php echo $edit_mode ? 'Edit Brand' : 'Brand Management'; ?></h2>
+                
+                <!-- Display messages if any -->
+                <?php if (isset($_SESSION['message'])): ?>
+                    <div class="alert alert-<?php echo $_SESSION['message']['type']; ?> alert-dismissible fade show" role="alert">
+                        <?php echo $_SESSION['message']['text']; ?>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <?php unset($_SESSION['message']); ?>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -105,6 +140,7 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                             <td><?php echo $brand['brand_name']; ?></td>
                                             <td>
                                                 <a href="brand.php?edit=<?php echo $brand['brand_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="../Actions/delete_brand.php?id=<?php echo $brand['brand_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this brand?')">Delete</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
