@@ -166,7 +166,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             // Check if category is in use by products
-            $check_sql = "SELECT product_id FROM product WHERE product_cat = ?";
+            $check_sql = "SELECT COUNT(*) as count FROM product WHERE product_cat = ?";
             $check_stmt = $conn->prepare($check_sql);
             if (!$check_stmt) {
                 throw new Exception("Prepare statement failed: " . $conn->error);
@@ -178,8 +178,12 @@ class ProductClass extends db_connection
             }
 
             $result = $check_stmt->get_result();
-            if ($result->num_rows > 0) {
-                throw new Exception("Cannot delete category because it is used by products");
+            $row = $result->fetch_assoc();
+
+            if ($row['count'] > 0) {
+                // Category is in use by products
+                error_log("Category $cat_id is in use by {$row['count']} products");
+                return false;
             }
 
             // Delete category
@@ -194,13 +198,12 @@ class ProductClass extends db_connection
                 throw new Exception("Execute statement failed: " . $stmt->error);
             }
 
-            return true;
+            return $stmt->affected_rows > 0;
         } catch (Exception $e) {
             error_log("Error deleting category: " . $e->getMessage());
             return false;
         }
     }
-
     //=============== BRAND FUNCTIONS ===============//
 
     /**
@@ -363,7 +366,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             // Check if brand is in use by products
-            $check_sql = "SELECT product_id FROM product WHERE product_brand = ?";
+            $check_sql = "SELECT COUNT(*) as count FROM product WHERE product_brand = ?";
             $check_stmt = $conn->prepare($check_sql);
             if (!$check_stmt) {
                 throw new Exception("Prepare statement failed: " . $conn->error);
@@ -375,8 +378,12 @@ class ProductClass extends db_connection
             }
 
             $result = $check_stmt->get_result();
-            if ($result->num_rows > 0) {
-                throw new Exception("Cannot delete brand because it is used by products");
+            $row = $result->fetch_assoc();
+
+            if ($row['count'] > 0) {
+                // Brand is in use by products
+                error_log("Brand $brand_id is in use by {$row['count']} products");
+                return false;
             }
 
             // Delete brand
@@ -391,13 +398,12 @@ class ProductClass extends db_connection
                 throw new Exception("Execute statement failed: " . $stmt->error);
             }
 
-            return true;
+            return $stmt->affected_rows > 0;
         } catch (Exception $e) {
             error_log("Error deleting brand: " . $e->getMessage());
             return false;
         }
     }
-
     //=============== PRODUCT FUNCTIONS ===============//
 
     /**

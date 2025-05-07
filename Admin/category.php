@@ -44,30 +44,7 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     <link rel="stylesheet" href="../CSS/admin-styles.css">
     <link rel="stylesheet" href="../CSS/admin.css">
     <link rel="icon" href="../Images/logo.png" type="image/png">
-    
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-        
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        .admin-container {
-            flex: 1 0 auto;
-            padding-bottom: 30px;
-        }
-        
-        footer {
-            flex-shrink: 0;
-            width: 100%;
-            margin-top: auto;
-        }
-    </style>
+
 </head>
 
 <body>
@@ -81,7 +58,7 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
         <div class="row">
             <div class="col-lg-12">
                 <h2><?php echo $edit_mode ? 'Edit Category' : 'Category Management'; ?></h2>
-                
+
                 <!-- Display messages if any -->
                 <?php if (isset($_SESSION['message'])): ?>
                     <div class="alert alert-<?php echo $_SESSION['message']['type']; ?> alert-dismissible fade show" role="alert">
