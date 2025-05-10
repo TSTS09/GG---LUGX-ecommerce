@@ -12,6 +12,15 @@ if (!is_logged_in() || !is_admin()) {
     exit;
 }
 
+// Output PHP configuration for debugging
+$php_settings = [
+    'file_uploads' => ini_get('file_uploads'),
+    'upload_max_filesize' => ini_get('upload_max_filesize'),
+    'post_max_size' => ini_get('post_max_size'),
+    'upload_tmp_dir' => ini_get('upload_tmp_dir'),
+    'max_file_uploads' => ini_get('max_file_uploads')
+];
+
 // Process form data
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate the input
@@ -57,17 +66,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Get current product data
     $current_product = $product_controller->get_one_product_ctr($product_id);
+    if (!$current_product) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Product not found'
+        ]);
+        exit;
+    }
 
     // Handle image update if a new image is uploaded
     $image_path = $current_product['product_image'];
 
-    if (!empty($_FILES['product_image']['name'])) {
+    if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] != UPLOAD_ERR_NO_FILE) {
         $target_dir = "../Images/product/";
         $timestamp = time();
         $file_extension = strtolower(pathinfo($_FILES["product_image"]["name"], PATHINFO_EXTENSION));
         $new_file_name = $timestamp . '_' . rand(1000, 9999) . '.' . $file_extension;
         $target_file = $target_dir . $new_file_name;
         $image_path = '../Images/product/' . $new_file_name;
+
+        // Create upload directory if it doesn't exist
+        if (!file_exists($target_dir)) {
+            if (!mkdir($target_dir, 0777, true)) {
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Failed to create upload directory',
+                    'details' => [
+                        'target_dir' => $target_dir,
+                        'php_settings' => $php_settings,
+                        'current_dir' => getcwd(),
+                        'parent_dir' => dirname(getcwd())
+                    ]
+                ]);
+                exit;
+            }
+        }
 
         // Check if file is an actual image
         $check = getimagesize($_FILES["product_image"]["tmp_name"]);
@@ -98,16 +131,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit;
         }
 
-        // Create upload directory if it doesn't exist
-        if (!file_exists($target_dir)) {
-            mkdir($target_dir, 0777, true);
-        }
-
         // Try to upload file
         if (!move_uploaded_file($_FILES["product_image"]["tmp_name"], $target_file)) {
+            $error_message = "Failed to upload image";
+
+            // Add detailed error information
+            $upload_error = error_get_last();
+            if ($upload_error) {
+                $error_message .= ": " . $upload_error['message'];
+            }
+
+            // Add information about the file and permissions
+            $error_message .= " | Target dir exists: " . (file_exists($target_dir) ? 'Yes' : 'No');
+            $error_message .= " | Target dir writable: " . (is_writable($target_dir) ? 'Yes' : 'No');
+            $error_message .= " | PHP upload error code: " . $_FILES["product_image"]["error"];
+
+            // Add temporary file information
+            $error_message .= " | Temp file exists: " . (file_exists($_FILES["product_image"]["tmp_name"]) ? 'Yes' : 'No');
+
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Failed to upload image'
+                'message' => $error_message,
+                'file_details' => [
+                    'name' => $_FILES["product_image"]["name"],
+                    'size' => $_FILES["product_image"]["size"],
+                    'type' => $_FILES["product_image"]["type"],
+                    'tmp_name' => $_FILES["product_image"]["tmp_name"],
+                    'error' => $_FILES["product_image"]["error"],
+                    'target_file' => $target_file,
+                    'php_settings' => $php_settings
+                ]
             ]);
             exit;
         }
@@ -137,7 +190,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         ]);
     } else {
         // If update fails but new image was uploaded, delete it
-        if (!empty($_FILES['product_image']['name']) && file_exists($target_file)) {
+        if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] == 0 && file_exists($target_file)) {
             unlink($target_file);
         }
 

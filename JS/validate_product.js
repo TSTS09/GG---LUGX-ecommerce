@@ -69,12 +69,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 errorMessage = 'Product keywords are required';
             }
 
-            // Validate image (only for new products or if editing and a new image is selected)
-            const isEditing = productForm.querySelector('input[name="product_id"]') !== null;
-            if (!isEditing && productImage.files.length === 0) {
-                isValid = false;
-                errorMessage = 'Please select a product image';
-            } else if (productImage.files.length > 0) {
+            // Validate image (only if a file is selected)
+            if (productImage.files.length > 0) {
                 const file = productImage.files[0];
 
                 // Check file size (max 5MB)
@@ -132,6 +128,12 @@ document.addEventListener('DOMContentLoaded', function () {
             // Get form data
             const formData = new FormData(productForm);
 
+            // Debug: Log the FormData contents
+            console.log("Form data being submitted:");
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + (pair[0] === 'product_image' ? 'File: ' + (pair[1].name || 'No file') : pair[1]));
+            }
+
             // Show loading state
             const submitButton = productForm.querySelector('button[type="submit"]');
             const originalButtonText = submitButton.textContent;
@@ -141,14 +143,26 @@ document.addEventListener('DOMContentLoaded', function () {
             // Determine if this is an add or edit operation
             const isEdit = productForm.querySelector('input[name="product_id"]') !== null;
             const actionUrl = isEdit ? '../Actions/update_product.php' : '../Actions/add_product.php';
+            console.log("Action URL:", actionUrl);
 
             // Send AJAX request
             fetch(actionUrl, {
                 method: 'POST',
                 body: formData
             })
-                .then(response => response.json())
+                .then(response => {
+                    console.log("Response status:", response.status);
+                    // First check if the response is ok
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    return response.json().catch(error => {
+                        // Handle case where response isn't valid JSON
+                        throw new Error("Invalid JSON response from server");
+                    });
+                })
                 .then(data => {
+                    console.log("Response data:", data);
                     if (data.status === 'success') {
                         // Show success message
                         const successElement = document.createElement('div');
@@ -171,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showValidationError('An unexpected error occurred. Please try again.');
+                    showValidationError('An unexpected error occurred: ' + error.message);
 
                     // Reset button state
                     submitButton.disabled = false;
@@ -196,6 +210,68 @@ document.addEventListener('DOMContentLoaded', function () {
                     reader.readAsDataURL(this.files[0]);
                 }
             });
+        }
+
+        // Add debug button (for testing purposes)
+        const debugButton = document.createElement('button');
+        debugButton.type = 'button';
+        debugButton.textContent = 'Debug Form';
+        debugButton.className = 'btn btn-secondary ml-2';
+        debugButton.style.marginLeft = '10px';
+        debugButton.onclick = debugAjaxRequest;
+
+        // Add it after the submit button
+        const submitButton = productForm.querySelector('button[type="submit"]');
+        submitButton.insertAdjacentElement('afterend', debugButton);
+
+        // Debug function
+        function debugAjaxRequest() {
+            // Get form data
+            const formData = new FormData(productForm);
+
+            // Log all form fields
+            console.log("Debug form data:");
+            for (let pair of formData.entries()) {
+                console.log(pair[0], pair[1]);
+            }
+
+            // Make the request with a full error handling chain
+            const isEdit = productForm.querySelector('input[name="product_id"]') !== null;
+            const actionUrl = isEdit ? '../Actions/update_product.php' : '../Actions/add_product.php';
+
+            fetch(actionUrl, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    console.log("Debug response status:", response.status);
+                    console.log("Debug response headers:", [...response.headers.entries()]);
+
+                    // Get the raw text first
+                    return response.text();
+                })
+                .then(rawText => {
+                    console.log("Debug raw response:", rawText);
+
+                    // Try to parse as JSON
+                    try {
+                        const data = JSON.parse(rawText);
+                        console.log("Debug parsed JSON:", data);
+                        return data;
+                    } catch (e) {
+                        console.error("Debug failed to parse response as JSON:", e);
+                        throw new Error("Invalid JSON response");
+                    }
+                })
+                .then(data => {
+                    console.log("Debug processing data:", data);
+                    // Process data here
+                    showValidationError("Debug info logged to console");
+                })
+                .catch(error => {
+                    console.error("Debug complete error details:", error);
+                    showValidationError("Debug error: " + error.message);
+                });
         }
     }
 });

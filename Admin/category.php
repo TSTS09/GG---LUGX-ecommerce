@@ -117,7 +117,6 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                             <td><?php echo $category['cat_name']; ?></td>
                                             <td>
                                                 <a href="category.php?edit=<?php echo $category['cat_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="../Actions/delete_category.php?id=<?php echo $category['cat_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this category?')">Delete</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

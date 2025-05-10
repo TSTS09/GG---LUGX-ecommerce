@@ -116,7 +116,6 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                             <td><?php echo $brand['brand_name']; ?></td>
                                             <td>
                                                 <a href="brand.php?edit=<?php echo $brand['brand_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="../Actions/delete_brand.php?id=<?php echo $brand['brand_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this brand?')">Delete</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

@@ -130,15 +130,16 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                 </div>
 
                                 <div class="form-group mb-3">
-                                    <label for="product_image">Product Image</label>
-                                    <input type="file" class="form-control" id="product_image" name="product_image" <?php echo $edit_mode ? '' : 'required'; ?>>
+                                    <label for="product_image">Product Image (Optional)</label>
+                                    <input type="file" class="form-control" id="product_image" name="product_image">
+                                    <small class="form-text text-muted">Upload an image (JPG, JPEG, PNG, or GIF, max 5MB) or leave blank to use a default image.</small>
                                     <?php if ($edit_mode && $product_to_edit && !empty($product_to_edit['product_image'])): ?>
                                         <div class="mt-2">
                                             <p>Current image:</p>
                                             <img src="<?php echo $product_to_edit['product_image']; ?>" alt="Current product image" class="img-thumbnail" style="max-width: 150px;">
                                         </div>
                                     <?php endif; ?>
-                                    <img id="image-preview" class="img-thumbnail" alt="Image preview">
+                                    <img id="image-preview" class="img-thumbnail mt-2" alt="Image preview" style="display: none; max-width: 150px;">
                                 </div>
                             </div>
                         </div>
