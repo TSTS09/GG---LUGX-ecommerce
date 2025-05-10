@@ -360,10 +360,11 @@ class ProductClass extends db_connection
      * @param int $brand_id - The brand ID
      * @return bool - True if successful, false otherwise
      */
-    public function delete_brand($brand_id) {
+    public function delete_brand($brand_id)
+    {
         try {
             $conn = $this->db_conn();
-            
+
             // Debug: Check what the query actually returns
             $check_sql = "SELECT COUNT(*) as count FROM product WHERE product_brand = ?";
             $check_stmt = $conn->prepare($check_sql);
@@ -371,16 +372,16 @@ class ProductClass extends db_connection
             $check_stmt->execute();
             $result = $check_stmt->get_result();
             $row = $result->fetch_assoc();
-            
+
             // Log the actual count for debugging
             error_log("Brand $brand_id is used by {$row['count']} products");
-            
+
             // Skip the check temporarily and try direct deletion
             $sql = "DELETE FROM brands WHERE brand_id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $brand_id);
             $stmt->execute();
-            
+
             return $stmt->affected_rows > 0;
         } catch (Exception $e) {
             error_log("Error deleting brand: " . $e->getMessage());
@@ -403,7 +404,50 @@ class ProductClass extends db_connection
     public function add_product($product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords)
     {
         try {
+            error_log("ProductClass: Adding product - Title: $product_title, Price: $product_price, Image: $product_image");
+
             $conn = $this->db_conn();
+            if (!$conn) {
+                error_log("ProductClass: Database connection failed");
+                return false;
+            }
+
+            // Check the database connection is active
+            if (!mysqli_ping($conn)) {
+                error_log("ProductClass: Database connection is not responding");
+                return false;
+            }
+
+            // Try a simple test query first
+            $test_result = mysqli_query($conn, "SELECT 1");
+            if (!$test_result) {
+                error_log("ProductClass: Test query failed: " . mysqli_error($conn));
+                return false;
+            }
+
+            // Verify the product table exists
+            $table_check = mysqli_query($conn, "SHOW TABLES LIKE 'product'");
+            if (mysqli_num_rows($table_check) == 0) {
+                error_log("ProductClass: Product table doesn't exist");
+                return false;
+            }
+
+            // Get the table structure
+            $columns = mysqli_query($conn, "DESCRIBE product");
+            $column_names = [];
+            while ($column = mysqli_fetch_assoc($columns)) {
+                $column_names[] = $column['Field'];
+                error_log("ProductClass: Column found: " . $column['Field'] . " (" . $column['Type'] . ")");
+            }
+
+            // Ensure all required columns exist
+            $required_columns = ['product_cat', 'product_brand', 'product_title', 'product_price', 'product_desc', 'product_image', 'product_keywords'];
+            foreach ($required_columns as $col) {
+                if (!in_array($col, $column_names)) {
+                    error_log("ProductClass: Required column '$col' is missing from product table");
+                    return false;
+                }
+            }
 
             // Sanitize inputs
             $product_cat = (int)$product_cat;
@@ -413,23 +457,42 @@ class ProductClass extends db_connection
             $product_desc = mysqli_real_escape_string($conn, $product_desc);
             $product_keywords = mysqli_real_escape_string($conn, $product_keywords);
 
-            // Insert product
-            $sql = "INSERT INTO product (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            error_log("ProductClass: Preparing to insert - Cat: $product_cat, Brand: $product_brand, Title: $product_title, Price: $product_price, Image: $product_image");
 
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+            // Try a direct query first for testing, skipping prepared statement
+            $direct_sql = "INSERT INTO product (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords) 
+                VALUES ({$product_cat}, {$product_brand}, '{$product_title}', {$product_price}, '{$product_desc}', '{$product_image}', '{$product_keywords}')";
+            error_log("ProductClass: Testing direct query: " . $direct_sql);
+
+            $direct_result = mysqli_query($conn, $direct_sql);
+            if (!$direct_result) {
+                error_log("ProductClass: Direct query failed: " . mysqli_error($conn));
+
+                // Try to diagnose the issue more
+                if (strpos(mysqli_error($conn), 'foreign key constraint') !== false) {
+                    error_log("ProductClass: Foreign key constraint failure - checking if category and brand exist");
+
+                    // Check if category exists
+                    $cat_check = mysqli_query($conn, "SELECT cat_id FROM categories WHERE cat_id = $product_cat");
+                    if (mysqli_num_rows($cat_check) == 0) {
+                        error_log("ProductClass: Category with ID $product_cat does not exist");
+                    }
+
+                    // Check if brand exists
+                    $brand_check = mysqli_query($conn, "SELECT brand_id FROM brands WHERE brand_id = $product_brand");
+                    if (mysqli_num_rows($brand_check) == 0) {
+                        error_log("ProductClass: Brand with ID $product_brand does not exist");
+                    }
+                }
+
+                return false;
             }
 
-            $stmt->bind_param("iisdssss", $product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
+            $insert_id = mysqli_insert_id($conn);
+            error_log("ProductClass: Product inserted successfully with ID: $insert_id");
             return true;
         } catch (Exception $e) {
-            error_log("Error adding product: " . $e->getMessage());
+            error_log("Exception in add_product: " . $e->getMessage());
             return false;
         }
     }

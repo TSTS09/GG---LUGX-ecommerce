@@ -1,6 +1,8 @@
 <?php
-//start session
-session_start();
+// Check if session is already started before starting it
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 //for header redirection
 ob_start();

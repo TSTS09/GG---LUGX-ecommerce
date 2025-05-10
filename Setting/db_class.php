@@ -1,7 +1,6 @@
 <?php
 //database credentials
 require('db_cred.php');
-
 /**
  *@version 0.0.1
  */
@@ -15,33 +14,54 @@ class db_connection
     /**
      *Database connection
      *@return boolean
-     **/    //connect
-     private function db_connect()
-     {
-       
-         //connection
-         $this->db = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-         //test the connection
-         if (mysqli_connect_errno()) {
-         
-             return false;
-         } else {
-           
-             return true;
-         }
-     }
-    
+     **/
+    private function db_connect()
+    {
+        try {
+            // Log connection attempt
+            error_log("Attempting database connection to " . DB_SERVER . " with user " . DB_USERNAME);
+
+            //connection
+            $this->db = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+
+            //test the connection
+            if (mysqli_connect_errno()) {
+                error_log("Database connection failed: " . mysqli_connect_error());
+                return false;
+            } else {
+                error_log("Database connection successful");
+                return true;
+            }
+        } catch (Exception $e) {
+            error_log("Exception during database connection: " . $e->getMessage());
+            return false;
+        }
+    }
+
     function db_conn()
     {
-        
-        // Ensure the connection is established
-        if ($this->db === null) {
-            $this->db_connect();
-        } else {
-        }
+        try {
+            // Ensure the connection is established
+            if ($this->db === null) {
+                $connection_result = $this->db_connect();
+                if (!$connection_result) {
+                    error_log("Failed to establish database connection in db_conn()");
+                }
+            }
 
-        // Return the connection
-        return $this->db; 
+            // Test the connection is still alive
+            if ($this->db && mysqli_ping($this->db) === false) {
+                error_log("Database connection lost, attempting to reconnect");
+                $this->db = null;
+                $this->db_connect();
+            }
+
+            // Return the connection
+            return $this->db;
+        } catch (Exception $e) {
+            error_log("Exception in db_conn: " . $e->getMessage());
+            return null;
+        }
     }
 
     //execute a query
@@ -52,18 +72,28 @@ class db_connection
      **/
     function db_query($sqlQuery)
     {
-        // Ensure the connection is established
-        if ($this->db === null) {
-            $this->db_connect();
-        }
+        try {
+            // Ensure the connection is established
+            if ($this->db === null) {
+                $this->db_connect();
+            }
 
-        //run query 
-        $this->results = mysqli_query($this->db, $sqlQuery);
+            // Log query attempt (truncate very long queries)
+            $log_query = strlen($sqlQuery) > 1000 ? substr($sqlQuery, 0, 1000) . "..." : $sqlQuery;
+            error_log("Executing query: " . $log_query);
 
-        if ($this->results == false) {
+            //run query 
+            $this->results = mysqli_query($this->db, $sqlQuery);
+
+            if ($this->results == false) {
+                error_log("Query failed: " . mysqli_error($this->db));
+                return false;
+            } else {
+                return true;
+            }
+        } catch (Exception $e) {
+            error_log("Exception in db_query: " . $e->getMessage());
             return false;
-        } else {
-            return true;
         }
     }
 
@@ -76,18 +106,28 @@ class db_connection
      **/
     function db_query_escape_string($sqlQuery)
     {
-        // Ensure the connection is established
-        if ($this->db === null) {
-            $this->db_connect();
-        }
+        try {
+            // Ensure the connection is established
+            if ($this->db === null) {
+                $this->db_connect();
+            }
 
-        //run query 
-        $this->results = mysqli_query($this->db, $sqlQuery);
+            // Log query attempt
+            $log_query = strlen($sqlQuery) > 1000 ? substr($sqlQuery, 0, 1000) . "..." : $sqlQuery;
+            error_log("Executing escaped query: " . $log_query);
 
-        if ($this->results == false) {
+            //run query 
+            $this->results = mysqli_query($this->db, $sqlQuery);
+
+            if ($this->results == false) {
+                error_log("Escaped query failed: " . mysqli_error($this->db));
+                return false;
+            } else {
+                return true;
+            }
+        } catch (Exception $e) {
+            error_log("Exception in db_query_escape_string: " . $e->getMessage());
             return false;
-        } else {
-            return true;
         }
     }
 
@@ -98,12 +138,25 @@ class db_connection
      **/
     function db_fetch_one($sql)
     {
-        // if executing query returns false
-        if (!$this->db_query($sql)) {
+        try {
+            // if executing query returns false
+            if (!$this->db_query($sql)) {
+                error_log("db_fetch_one: Query execution failed");
+                return false;
+            }
+
+            //return a record
+            $result = mysqli_fetch_assoc($this->results);
+
+            if ($result === null) {
+                error_log("db_fetch_one: No records found");
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            error_log("Exception in db_fetch_one: " . $e->getMessage());
             return false;
         }
-        //return a record
-        return mysqli_fetch_assoc($this->results);
     }
 
     //fetch all data
@@ -113,14 +166,24 @@ class db_connection
      **/
     function db_fetch_all($sql)
     {
-        // if executing query returns false
-        if (!$this->db_query($sql)) {
+        try {
+            // if executing query returns false
+            if (!$this->db_query($sql)) {
+                error_log("db_fetch_all: Query execution failed");
+                return false;
+            }
+
+            //return all record
+            $results = mysqli_fetch_all($this->results, MYSQLI_ASSOC);
+
+            error_log("db_fetch_all: Found " . count($results) . " records");
+            return $results;
+        } catch (Exception $e) {
+            error_log("Exception in db_fetch_all: " . $e->getMessage());
             return false;
         }
-        //return all record
-        return mysqli_fetch_all($this->results, MYSQLI_ASSOC);
     }
-    
+
     //count data
     /**
      *get select data
@@ -128,15 +191,24 @@ class db_connection
      **/
     function db_count()
     {
-        //check if result was set
-        if ($this->results == null) {
-            return false;
-        } elseif ($this->results == false) {
+        try {
+            //check if result was set
+            if ($this->results == null) {
+                error_log("db_count: Results is null");
+                return false;
+            } elseif ($this->results == false) {
+                error_log("db_count: Results is false");
+                return false;
+            }
+
+            //return a record
+            $count = mysqli_num_rows($this->results);
+            error_log("db_count: Count is " . $count);
+            return $count;
+        } catch (Exception $e) {
+            error_log("Exception in db_count: " . $e->getMessage());
             return false;
         }
-
-        //return a record
-        return mysqli_num_rows($this->results);
     }
 
     // Destructor to close the connection
@@ -146,6 +218,4 @@ class db_connection
             mysqli_close($this->db);
         }
     }
-    
 }
-

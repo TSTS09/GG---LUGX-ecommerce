@@ -96,7 +96,32 @@ class ProductController
 
     public function add_product_ctr($product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords)
     {
-        return $this->productClass->add_product($product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords);
+        try {
+            error_log("ProductController: Adding product - Title: $product_title, Category: $product_cat, Brand: $product_brand");
+
+            // Validate inputs
+            if (empty($product_title)) {
+                error_log("ProductController: Product title is empty");
+                return false;
+            }
+
+            // Create a database connection to test directly
+            $connection_test = $this->productClass->db_conn();
+            if (!$connection_test) {
+                error_log("ProductController: Database connection failed");
+                return false;
+            }
+            error_log("ProductController: Database connection successful");
+
+            // Add product
+            $result = $this->productClass->add_product($product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords);
+
+            error_log("ProductController: add_product result: " . ($result ? "Success" : "Failed"));
+            return $result;
+        } catch (Exception $e) {
+            error_log("Exception in add_product_ctr: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function get_all_products_ctr($search = '', $entries = 10)
