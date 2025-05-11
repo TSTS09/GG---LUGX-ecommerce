@@ -245,7 +245,7 @@ class ProductController
         }
     }
     /**
-     * Get bestselling products (implementation depends on your database structure)
+     * Get bestselling products 
      * @param int $limit - Number of products to return
      * @return array - Array of bestselling products
      */

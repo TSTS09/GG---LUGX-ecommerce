@@ -33,7 +33,7 @@ if (!$cart_items['success'] || empty($cart_items['data'])) {
 }
 
 // Initialize PayStack integration
-$paystack_public_key = "pk_test_yourtestkeyhere"; // Replace with your PayStack test public key
+$paystack_public_key = "sk_test_75041253ce1c9538bcf1e5a634d10d2bef5299f7"; 
 $email = $customer['customer_email'];
 $amount = $cart_total * 100; // Convert to kobo (smallest currency unit)
 $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
