@@ -57,75 +57,7 @@ $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
     <link rel="stylesheet" href="../CSS/animate.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
     <link rel="icon" href="../Images/logo.png" type="image/png">
-
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-        
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        .main-content {
-            flex: 1 0 auto;
-            padding-bottom: 30px;
-        }
-        
-        footer {
-            flex-shrink: 0;
-            width: 100%;
-            margin-top: auto;
-        }
-        
-        .payment-container {
-            max-width: 1000px;
-            margin: 100px auto;
-            padding: 30px;
-        }
-        
-        .order-summary {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .payment-details {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-        }
-        
-        .payment-method {
-            margin-top: 20px;
-        }
-        
-        .btn-pay {
-            background-color: #ee626b;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 25px;
-            font-size: 16px;
-            transition: all 0.3s;
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        .btn-pay:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-        
-        .divider {
-            margin: 20px 0;
-            border-top: 1px solid #ddd;
-        }
-    </style>
+    <link rel="stylesheet" href="../CSS/payment.css">
 </head>
 
 <body>

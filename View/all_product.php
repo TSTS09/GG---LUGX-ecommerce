@@ -16,18 +16,27 @@ if (!empty($search_term)) {
     // Check if category filter is numeric (ID) or string (name)
     if (is_numeric($category_filter)) {
         $products = $product_controller->get_products_by_category_ctr($category_filter);
+        // Get category name for display
+        $category_info = $product_controller->get_one_category_ctr($category_filter);
+        $category_name = $category_info ? $category_info['cat_name'] : 'Category';
     } else {
         // Get category ID from name 
         $category = $product_controller->get_category_by_name_ctr($category_filter);
         if ($category) {
             $products = $product_controller->get_products_by_category_ctr($category['cat_id']);
+            $category_name = $category_filter;
         } else {
             $products = $product_controller->get_all_products_ctr();
+            $category_name = 'All Products';
         }
     }
 } else {
     $products = $product_controller->get_all_products_ctr();
+    $category_name = 'All Products';
 }
+
+// Get all categories for filtering
+$all_categories = $product_controller->get_all_categories_ctr();
 ?>
 
 <!DOCTYPE html>
@@ -166,7 +175,7 @@ if (!empty($search_term)) {
                     if (!empty($search_term)) {
                         echo 'Search Results for: "' . htmlspecialchars($search_term) . '"';
                     } elseif (!empty($category_filter)) {
-                        echo 'Products in Category: ' . htmlspecialchars($category_filter);
+                        echo 'Products in Category: ' . htmlspecialchars($category_name);
                     } else {
                         echo 'All Products';
                     }
@@ -193,13 +202,17 @@ if (!empty($search_term)) {
         <div class="row category-filters">
             <div class="col-lg-12 text-center">
                 <?php
-                $categories = $product_controller->get_all_categories_ctr();
-                if ($categories['success'] && !empty($categories['data'])) {
+                if ($all_categories['success'] && !empty($all_categories['data'])) {
                     echo '<a href="all_product.php" class="category-badge ' . (empty($category_filter) ? 'active-filter' : '') . '">All</a>';
 
-                    foreach ($categories['data'] as $category) {
+                    foreach ($all_categories['data'] as $category) {
+                        // Count products in this category
+                        $category_products = $product_controller->get_products_by_category_ctr($category['cat_id']);
+                        $product_count = isset($category_products['data']) ? count($category_products['data']) : 0;
+
                         $active_class = ($category_filter == $category['cat_id'] || $category_filter == $category['cat_name']) ? 'active-filter' : '';
-                        echo '<a href="all_product.php?category=' . $category['cat_id'] . '" class="category-badge ' . $active_class . '">' . $category['cat_name'] . '</a>';
+                        echo '<a href="all_product.php?category=' . $category['cat_id'] . '" class="category-badge ' . $active_class . '">' .
+                            $category['cat_name'] . ' (' . $product_count . ')</a>';
                     }
                 }
                 ?>
@@ -223,11 +236,13 @@ if (!empty($search_term)) {
                                     <a href="single_product.php?id=<?php echo $product['product_id']; ?>" class="btn btn-sm btn-primary">View</a>
                                 </div>
                             </div>
-                            <div class="card-footer bg-white border-top-0 text-center">
-                                <a href="../Actions/add_to_cart.php?id=<?php echo $product['product_id']; ?>" class="btn btn-add-to-cart">
-                                    <i class="fa fa-shopping-cart"></i> Add to Cart
-                                </a>
-                            </div>
+                            <?php if (!is_admin()): ?>
+                                <div class="card-footer bg-white border-top-0 text-center">
+                                    <a href="../Actions/add_to_cart.php?id=<?php echo $product['product_id']; ?>" class="btn btn-add-to-cart">
+                                        <i class="fa fa-shopping-cart"></i> Add to Cart
+                                    </a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php

@@ -10,18 +10,20 @@ if (!is_logged_in() || !is_admin()) {
 
 require_once("../Controllers/product_controller.php");
 $product_controller = new ProductController();
+$products = $product_controller->get_all_products_ctr();
 $categories = $product_controller->get_all_categories_ctr();
+$brands = $product_controller->get_all_brands_ctr();
 
-// Check if editing a category
+// Check if editing a product
 $edit_mode = false;
-$category_to_edit = null;
+$product_to_edit = null;
 
 if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     $edit_mode = true;
-    $cat_id = (int)$_GET['edit'];
-    $category_to_edit = $product_controller->get_one_category_ctr($cat_id);
+    $product_id = (int)$_GET['edit'];
+    $product_to_edit = $product_controller->get_one_product_ctr($product_id);
 
-    if (!$category_to_edit) {
+    if (!$product_to_edit) {
         $edit_mode = false;
     }
 }
@@ -33,7 +35,7 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $edit_mode ? 'Edit' : 'Add'; ?> Category - Admin Panel</title>
+    <title><?php echo $edit_mode ? 'Edit' : 'Add'; ?> Product - Admin Panel</title>
 
     <!-- Bootstrap core CSS -->
     <link href="../JS/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -44,7 +46,6 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     <link rel="stylesheet" href="../CSS/admin-styles.css">
     <link rel="stylesheet" href="../CSS/admin.css">
     <link rel="icon" href="../Images/logo.png" type="image/png">
-
 </head>
 
 <body>
@@ -57,74 +58,151 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     <div class="admin-container">
         <div class="row">
             <div class="col-lg-12">
-                <h2><?php echo $edit_mode ? 'Edit Category' : 'Category Management'; ?></h2>
-
-                <!-- Display messages if any -->
-                <?php if (isset($_SESSION['message'])): ?>
-                    <div class="alert alert-<?php echo $_SESSION['message']['type']; ?> alert-dismissible fade show" role="alert">
-                        <?php echo $_SESSION['message']['text']; ?>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <?php unset($_SESSION['message']); ?>
-                <?php endif; ?>
+                <h2><?php echo $edit_mode ? 'Edit Product' : 'Product Management'; ?></h2>
             </div>
         </div>
 
         <div class="row">
-            <div class="col-lg-5">
-                <div class="category-form">
-                    <h4><?php echo $edit_mode ? 'Update Category' : 'Add New Category'; ?></h4>
-                    <form id="categoryForm" method="POST" action="<?php echo $edit_mode ? '../Actions/update_category.php' : '../Actions/add_category.php'; ?>">
-                        <?php if ($edit_mode && $category_to_edit): ?>
-                            <input type="hidden" name="cat_id" value="<?php echo $category_to_edit['cat_id']; ?>">
+            <div class="col-lg-12">
+                <div class="product-form">
+                    <h4><?php echo $edit_mode ? 'Update Product' : 'Add New Product'; ?></h4>
+                    <form id="productForm" method="POST" action="<?php echo $edit_mode ? '../Actions/update_product.php' : '../Actions/add_product.php'; ?>" enctype="multipart/form-data">
+                        <?php if ($edit_mode && $product_to_edit): ?>
+                            <input type="hidden" name="product_id" value="<?php echo $product_to_edit['product_id']; ?>">
                         <?php endif; ?>
 
-                        <div class="form-group">
-                            <label for="cat_name">Category Name</label>
-                            <input type="text" class="form-control" id="cat_name" name="cat_name"
-                                value="<?php echo $edit_mode && $category_to_edit ? $category_to_edit['cat_name'] : ''; ?>" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_title">Product Title</label>
+                                    <input type="text" class="form-control" id="product_title" name="product_title"
+                                        value="<?php echo $edit_mode && $product_to_edit ? $product_to_edit['product_title'] : ''; ?>" required>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="product_cat">Product Category</label>
+                                    <select class="form-control" id="product_cat" name="product_cat" required>
+                                        <option value="">Select Category</option>
+                                        <?php
+                                        if ($categories['success'] && !empty($categories['data'])) {
+                                            foreach ($categories['data'] as $category) {
+                                                $selected = ($edit_mode && $product_to_edit && $product_to_edit['product_cat'] == $category['cat_id']) ? 'selected' : '';
+                                                echo "<option value=\"{$category['cat_id']}\" {$selected}>{$category['cat_name']}</option>";
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="product_brand">Product Brand</label>
+                                    <select class="form-control" id="product_brand" name="product_brand" required>
+                                        <option value="">Select Brand</option>
+                                        <?php
+                                        if ($brands['success'] && !empty($brands['data'])) {
+                                            foreach ($brands['data'] as $brand) {
+                                                $selected = ($edit_mode && $product_to_edit && $product_to_edit['product_brand'] == $brand['brand_id']) ? 'selected' : '';
+                                                echo "<option value=\"{$brand['brand_id']}\" {$selected}>{$brand['brand_name']}</option>";
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="product_price">Product Price</label>
+                                    <input type="number" step="0.01" class="form-control" id="product_price" name="product_price"
+                                        value="<?php echo $edit_mode && $product_to_edit ? $product_to_edit['product_price'] : ''; ?>" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="product_desc">Product Description</label>
+                                    <textarea class="form-control" id="product_desc" name="product_desc" rows="4" required><?php echo $edit_mode && $product_to_edit ? $product_to_edit['product_desc'] : ''; ?></textarea>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="product_keywords">Product Keywords</label>
+                                    <input type="text" class="form-control" id="product_keywords" name="product_keywords"
+                                        value="<?php echo $edit_mode && $product_to_edit ? $product_to_edit['product_keywords'] : ''; ?>" required>
+                                    <small class="form-text text-muted">Separate keywords with commas</small>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="product_image">Product Image (Optional)</label>
+                                    <input type="file" class="form-control" id="product_image" name="product_image">
+                                    <small class="form-text text-muted">Upload an image (JPG, JPEG, PNG, or GIF, max 5MB) or leave blank to use a default image.</small>
+                                    <?php if ($edit_mode && $product_to_edit && !empty($product_to_edit['product_image'])): ?>
+                                        <div class="mt-2">
+                                            <p>Current image:</p>
+                                            <img src="<?php echo $product_to_edit['product_image']; ?>" alt="Current product image" class="img-thumbnail" style="max-width: 150px;">
+                                        </div>
+                                    <?php endif; ?>
+                                    <img id="image-preview" class="img-thumbnail mt-2" alt="Image preview" style="display: none; max-width: 150px;">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group mt-4">
-                            <button type="submit" class="btn btn-primary"><?php echo $edit_mode ? 'Update' : 'Add'; ?> Category</button>
+                            <button type="submit" class="btn btn-primary"><?php echo $edit_mode ? 'Update' : 'Add'; ?> Product</button>
                             <?php if ($edit_mode): ?>
-                                <a href="category.php" class="btn btn-secondary">Cancel</a>
+                                <a href="product.php" class="btn btn-secondary">Cancel</a>
                             <?php endif; ?>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="col-lg-7">
-                <div class="category-table">
-                    <h4>All Categories</h4>
-                    <?php if ($categories['success'] && !empty($categories['data'])): ?>
+            <div class="col-lg-12">
+                <div class="product-table">
+                    <h4>All Products</h4>
+                    <?php if ($products['success'] && !empty($products['data'])): ?>
                         <div class="table-responsive">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Category Name</th>
+                                        <th>#</th>
+                                        <th>Image</th>
+                                        <th>Title</th>
+                                        <th>Category</th>
+                                        <th>Brand</th>
+                                        <th>Price</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($categories['data'] as $category): ?>
+                                    <?php
+                                    $counter = 1;
+                                    foreach ($products['data'] as $product):
+                                    ?>
                                         <tr>
-                                            <td><?php echo $category['cat_id']; ?></td>
-                                            <td><?php echo $category['cat_name']; ?></td>
+                                            <td><?php echo $counter; ?></td>
                                             <td>
-                                                <a href="category.php?edit=<?php echo $category['cat_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                <?php if (!empty($product['product_image'])): ?>
+                                                    <img src="<?php echo $product['product_image']; ?>" alt="<?php echo $product['product_title']; ?>" style="max-width: 50px; max-height: 50px;">
+                                                <?php else: ?>
+                                                    <span>No image</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><?php echo $product['product_title']; ?></td>
+                                            <td><?php echo $product['cat_name']; ?></td>
+                                            <td><?php echo $product['brand_name']; ?></td>
+                                            <td>$<?php echo number_format($product['product_price'], 2); ?></td>
+                                            <td>
+                                                <a href="product.php?edit=<?php echo $product['product_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="../Actions/delete_product.php?id=<?php echo $product['product_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this product?')">Delete</a>
                                             </td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php
+                                        $counter++;
+                                    endforeach;
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
                     <?php else: ?>
-                        <p>No categories found.</p>
+                        <p>No products found.</p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -140,7 +218,7 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     <!-- Scripts -->
     <script src="../JS/jquery/jquery.min.js"></script>
     <script src="../JS/bootstrap/js/bootstrap.min.js"></script>
-    <script src="../JS/validate_category.js"></script>
+    <script src="../JS/validate_product.js"></script>
 </body>
 
 </html>

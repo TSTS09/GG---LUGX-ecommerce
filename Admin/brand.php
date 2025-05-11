@@ -104,21 +104,27 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>#</th>
                                         <th>Brand Name</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($brands['data'] as $brand): ?>
+                                    <?php
+                                    $counter = 1;
+                                    foreach ($brands['data'] as $brand):
+                                    ?>
                                         <tr>
-                                            <td><?php echo $brand['brand_id']; ?></td>
+                                            <td><?php echo $counter; ?></td>
                                             <td><?php echo $brand['brand_name']; ?></td>
                                             <td>
                                                 <a href="brand.php?edit=<?php echo $brand['brand_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
                                             </td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php
+                                        $counter++;
+                                    endforeach;
+                                    ?>
                                 </tbody>
                             </table>
                         </div>

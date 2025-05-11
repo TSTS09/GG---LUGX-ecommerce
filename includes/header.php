@@ -80,7 +80,7 @@ function isActive($page_name)
                             <li><a href="<?php echo $base_url; ?>Admin/brand.php" <?php echo isActive('brand'); ?>>Brands</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/category.php" <?php echo isActive('category'); ?>>Categories</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/product.php" <?php echo isActive('product'); ?>>Manage Products</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
+                            <li><a href="<?php echo $base_url; ?>Admin/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
                             <li><a href="<?php echo $base_url; ?>Actions/logout.php">Logout</a></li>
                         <?php elseif (is_logged_in()): ?>
                             <!-- Regular User Navigation Menu -->

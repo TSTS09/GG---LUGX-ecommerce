@@ -166,7 +166,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             // Check if category is in use by products
-            $check_sql = "SELECT COUNT(*) as count FROM product WHERE product_cat = ?";
+            $check_sql = "SELECT COUNT(*) as count FROM products WHERE product_cat = ?";
             $check_stmt = $conn->prepare($check_sql);
             if (!$check_stmt) {
                 throw new Exception("Prepare statement failed: " . $conn->error);
@@ -366,7 +366,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             // Debug: Check what the query actually returns
-            $check_sql = "SELECT COUNT(*) as count FROM product WHERE product_brand = ?";
+            $check_sql = "SELECT COUNT(*) as count FROM products WHERE product_brand = ?";
             $check_stmt = $conn->prepare($check_sql);
             $check_stmt->bind_param("i", $brand_id);
             $check_stmt->execute();
@@ -425,15 +425,15 @@ class ProductClass extends db_connection
                 return false;
             }
 
-            // Verify the product table exists
-            $table_check = mysqli_query($conn, "SHOW TABLES LIKE 'product'");
+            // Verify the products table exists
+            $table_check = mysqli_query($conn, "SHOW TABLES LIKE 'products'");
             if (mysqli_num_rows($table_check) == 0) {
-                error_log("ProductClass: Product table doesn't exist");
+                error_log("ProductClass: Products table doesn't exist");
                 return false;
             }
 
             // Get the table structure
-            $columns = mysqli_query($conn, "DESCRIBE product");
+            $columns = mysqli_query($conn, "DESCRIBE products");
             $column_names = [];
             while ($column = mysqli_fetch_assoc($columns)) {
                 $column_names[] = $column['Field'];
@@ -444,7 +444,7 @@ class ProductClass extends db_connection
             $required_columns = ['product_cat', 'product_brand', 'product_title', 'product_price', 'product_desc', 'product_image', 'product_keywords'];
             foreach ($required_columns as $col) {
                 if (!in_array($col, $column_names)) {
-                    error_log("ProductClass: Required column '$col' is missing from product table");
+                    error_log("ProductClass: Required column '$col' is missing from products table");
                     return false;
                 }
             }
@@ -460,7 +460,7 @@ class ProductClass extends db_connection
             error_log("ProductClass: Preparing to insert - Cat: $product_cat, Brand: $product_brand, Title: $product_title, Price: $product_price, Image: $product_image");
 
             // Try a direct query first for testing, skipping prepared statement
-            $direct_sql = "INSERT INTO product (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords) 
+            $direct_sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords) 
                 VALUES ({$product_cat}, {$product_brand}, '{$product_title}', {$product_price}, '{$product_desc}', '{$product_image}', '{$product_keywords}')";
             error_log("ProductClass: Testing direct query: " . $direct_sql);
 
@@ -510,7 +510,7 @@ class ProductClass extends db_connection
 
             // Base query
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM product p 
+                   FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id";
 
@@ -576,7 +576,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM product p 
+                   FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
                    WHERE p.product_id = ?";
@@ -627,7 +627,7 @@ class ProductClass extends db_connection
 
             // Prepare SQL based on whether image is being updated
             if ($product_image) {
-                $sql = "UPDATE product SET 
+                $sql = "UPDATE products SET 
                         product_cat = ?, 
                         product_brand = ?, 
                         product_title = ?, 
@@ -644,7 +644,7 @@ class ProductClass extends db_connection
 
                 $stmt->bind_param("iisdsssi", $product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords, $product_id);
             } else {
-                $sql = "UPDATE product SET 
+                $sql = "UPDATE products SET 
                         product_cat = ?, 
                         product_brand = ?, 
                         product_title = ?, 
@@ -683,7 +683,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             // Get product image for deletion
-            $img_sql = "SELECT product_image FROM product WHERE product_id = ?";
+            $img_sql = "SELECT product_image FROM products WHERE product_id = ?";
             $img_stmt = $conn->prepare($img_sql);
             if (!$img_stmt) {
                 throw new Exception("Prepare statement failed: " . $conn->error);
@@ -698,7 +698,7 @@ class ProductClass extends db_connection
             $product = $result->fetch_assoc();
 
             // Delete product
-            $sql = "DELETE FROM product WHERE product_id = ?";
+            $sql = "DELETE FROM products WHERE product_id = ?";
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
                 throw new Exception("Prepare statement failed: " . $conn->error);
@@ -736,7 +736,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM product p 
+                   FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
                    WHERE p.product_cat = ?";
@@ -788,7 +788,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM product p 
+                   FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
                    WHERE p.product_brand = ?";
@@ -842,7 +842,7 @@ class ProductClass extends db_connection
             $search_param = "%$search_term%";
 
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM product p 
+                   FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
                    WHERE p.product_title LIKE ? 
@@ -885,7 +885,7 @@ class ProductClass extends db_connection
             $conn = $this->db_conn();
 
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM product p 
+                   FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
                    ORDER BY p.product_id DESC 
@@ -914,6 +914,7 @@ class ProductClass extends db_connection
             return [];
         }
     }
+
     /**
      * Get bestselling products based on order data
      * @param int $limit - Number of products to return
@@ -927,7 +928,7 @@ class ProductClass extends db_connection
             // This is a sample implementation assuming you have an order_details table
             // with product_id and quantity columns
             $sql = "SELECT p.*, c.cat_name, b.brand_name, SUM(od.qty) as total_sold 
-               FROM product p
+               FROM products p
                LEFT JOIN categories c ON p.product_cat = c.cat_id 
                LEFT JOIN brands b ON p.product_brand = b.brand_id
                LEFT JOIN orderdetails od ON p.product_id = od.product_id
@@ -963,6 +964,7 @@ class ProductClass extends db_connection
             return [];
         }
     }
+
     /**
      * Get category by name
      * @param string $category_name - Category name

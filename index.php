@@ -4,10 +4,10 @@ require_once("Setting/core.php");
 
 // If user is logged in but somehow ends up here without active session, redirect
 if (!is_logged_in() && isset($_COOKIE['user_logged_in'])) {
-    // Clear cookie and redirect to login
-    setcookie('user_logged_in', '', time() - 3600, '/');
-    header("Location: Login/login.php");
-    exit;
+  // Clear cookie and redirect to login
+  setcookie('user_logged_in', '', time() - 3600, '/');
+  header("Location: Login/login.php");
+  exit;
 }
 
 // Include necessary controllers
@@ -44,7 +44,8 @@ $page_title = "GG - LUGX Gaming";
 
   <style>
     /* Fix for footer positioning */
-    html, body {
+    html,
+    body {
       height: 100%;
       margin: 0;
     }
@@ -65,23 +66,23 @@ $page_title = "GG - LUGX Gaming";
       width: 100% !important;
       margin-top: auto !important;
     }
-    
+
     /* Fix header text visibility */
     .header-area .main-nav .nav li a {
       color: #333333 !important;
       font-weight: 500;
     }
-    
+
     .header-area .main-nav .nav li a.active {
       color: #ee626b !important;
       font-weight: 600;
     }
-    
+
     .header-area {
       background-color: #f8f8f8;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
-    
+
     .user-greeting {
       color: #333333;
       font-weight: 600;
@@ -114,12 +115,12 @@ $page_title = "GG - LUGX Gaming";
             <a href="index.php" class="logo">
               <img src="Images/logo.png" alt="GG-LUGX" style="width: 158px;">
             </a>
-            
+
             <!-- Main Menu -->
             <ul class="nav">
               <?php if (is_logged_in() && is_admin()): ?>
                 <!-- Admin Navigation Menu -->
-                <li><a href="index.php" class= "active">Home</a></li>
+                <li><a href="index.php" class="active">Home</a></li>
                 <li><a href="Admin/brand.php">Brands</a></li>
                 <li><a href="Admin/category.php">Categories</a></li>
                 <li><a href="Admin/product.php">Manage Products</a></li>
@@ -127,22 +128,22 @@ $page_title = "GG - LUGX Gaming";
                 <li><a href="Actions/logout.php">Logout</a></li>
               <?php elseif (is_logged_in()): ?>
                 <!-- Regular User Navigation Menu -->
-                <li><a href="index.php" class= "active">Home</a></li>
+                <li><a href="index.php" class="active">Home</a></li>
                 <li><a href="View/all_product.php">Products</a></li>
                 <li><a href="View/cart.php">
-                  <i class="fa fa-shopping-cart"></i> Cart
-                </a></li>
+                    <i class="fa fa-shopping-cart"></i> Cart
+                  </a></li>
                 <li><a href="View/orders.php">My Orders</a></li>
                 <li><a href="View/contact.php">Contact Us</a></li>
                 <li><a href="Actions/logout.php">Logout</a></li>
               <?php else: ?>
                 <!-- Not Logged In Navigation Menu -->
-                <li><a href="index.php" class= "active">Home</a></li>
+                <li><a href="index.php" class="active">Home</a></li>
                 <li><a href="View/all_product.php">Our Shop</a></li>
                 <li><a href="View/contact.php">Contact Us</a></li>
                 <li><a href="Login/login.php">Sign In/Register</a></li>
               <?php endif; ?>
-              
+
               <!-- Username display if logged in -->
               <?php if (is_logged_in()): ?>
                 <li>
@@ -152,7 +153,7 @@ $page_title = "GG - LUGX Gaming";
                 </li>
               <?php endif; ?>
             </ul>
-            
+
             <a class='menu-trigger'>
               <span>Menu</span>
             </a>
@@ -173,13 +174,13 @@ $page_title = "GG - LUGX Gaming";
               <h2>YOUR ULTIMATE GAMING DESTINATION!</h2>
               <p>GG - LUGX is your one-stop shop for all gaming needs. From AAA titles to indie gems, plus all the equipment that serious gamers demand. Elevate your gaming experience with our premium selection of games and gear.</p>
               <div class="search-input">
-                <?php if (is_logged_in()): ?>
-                  <!-- Search form for logged in users -->
+                <?php if (is_logged_in() && !is_admin()): ?>
+                  <!-- Search form for logged in non-admin users -->
                   <form id="search" action="View/product_search_result.php" method="GET">
                     <input type="text" placeholder="Type Something" id='searchText' name="search" />
                     <button type="submit">Search Now</button>
                   </form>
-                <?php else: ?>
+                <?php elseif (!is_admin()): ?>
                   <!-- Search form for non-logged in users with login redirect -->
                   <form id="search" onsubmit="redirectToLogin(event)">
                     <input type="text" placeholder="Type Something" id='searchText' name="searchKeyword" />
@@ -204,95 +205,95 @@ $page_title = "GG - LUGX Gaming";
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="features">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-3 col-md-6">
-            <a href="#">
-              <div class="item">
-                <div class="image">
-                  <img src="Images/featured-01.png" alt="" style="max-width: 44px;">
+      <div class="features">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-3 col-md-6">
+              <a href="#">
+                <div class="item">
+                  <div class="image">
+                    <img src="Images/featured-01.png" alt="" style="max-width: 44px;">
+                  </div>
+                  <h4>Fast Delivery</h4>
                 </div>
-                <h4>Fast Delivery</h4>
-              </div>
-            </a>
-          </div>
-          <div class="col-lg-3 col-md-6">
-            <a href="#">
-              <div class="item">
-                <div class="image">
-                  <img src="Images/featured-02.png" alt="" style="max-width: 44px;">
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <a href="#">
+                <div class="item">
+                  <div class="image">
+                    <img src="Images/featured-02.png" alt="" style="max-width: 44px;">
+                  </div>
+                  <h4>Pre-Order Bonus</h4>
                 </div>
-                <h4>Pre-Order Bonus</h4>
-              </div>
-            </a>
-          </div>
-          <div class="col-lg-3 col-md-6">
-            <a href="#">
-              <div class="item">
-                <div class="image">
-                  <img src="Images/featured-03.png" alt="" style="max-width: 44px;">
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <a href="#">
+                <div class="item">
+                  <div class="image">
+                    <img src="Images/featured-03.png" alt="" style="max-width: 44px;">
+                  </div>
+                  <h4>24/7 Support</h4>
                 </div>
-                <h4>24/7 Support</h4>
-              </div>
-            </a>
-          </div>
-          <div class="col-lg-3 col-md-6">
-            <a href="#">
-              <div class="item">
-                <div class="image">
-                  <img src="Images/featured-04.png" alt="" style="max-width: 44px;">
+              </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <a href="#">
+                <div class="item">
+                  <div class="image">
+                    <img src="Images/featured-04.png" alt="" style="max-width: 44px;">
+                  </div>
+                  <h4>Rewards Program</h4>
                 </div>
-                <h4>Rewards Program</h4>
-              </div>
-            </a>
+              </a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="section trending">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-6">
-            <div class="section-heading">
-              <h6>New Arrivals</h6>
-              <h2>Featured Games</h2>
+      <div class="section trending">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="section-heading">
+                <h6>New Arrivals</h6>
+                <h2>Featured Games</h2>
+              </div>
             </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="main-button">
-              <a href="View/all_product.php">View All</a>
+            <div class="col-lg-6">
+              <div class="main-button">
+                <a href="View/all_product.php">View All</a>
+              </div>
             </div>
-          </div>
-          
-          <?php
-          // Display featured products
-          if ($featured_products['success'] && !empty($featured_products['data'])) {
+
+            <?php
+            // Display featured products
+            if ($featured_products['success'] && !empty($featured_products['data'])) {
               foreach ($featured_products['data'] as $product) {
-          ?>
-              <div class="col-lg-3 col-md-6">
-                <div class="item">
-                  <div class="thumb">
-                    <a href="View/single_product.php?id=<?php echo $product['product_id']; ?>">
-                      <img src="<?php echo $product['product_image']; ?>" alt="<?php echo $product['product_title']; ?>">
-                    </a>
-                    <span class="price">$<?php echo number_format($product['product_price'], 2); ?></span>
-                  </div>
-                  <div class="down-content">
-                    <span class="category"><?php echo $product['cat_name']; ?></span>
-                    <h4><?php echo $product['product_title']; ?></h4>
-                    <a href="Actions/add_to_cart.php?id=<?php echo $product['product_id']; ?>"><i class="fa fa-shopping-bag"></i></a>
+            ?>
+                <div class="col-lg-3 col-md-6">
+                  <div class="item">
+                    <div class="thumb">
+                      <a href="View/single_product.php?id=<?php echo $product['product_id']; ?>">
+                        <img src="<?php echo $product['product_image']; ?>" alt="<?php echo $product['product_title']; ?>">
+                      </a>
+                      <span class="price">$<?php echo number_format($product['product_price'], 2); ?></span>
+                    </div>
+                    <div class="down-content">
+                      <span class="category"><?php echo $product['cat_name']; ?></span>
+                      <h4><?php echo $product['product_title']; ?></h4>
+                      <?php if (!is_admin()): ?>
+                        <a href="Actions/add_to_cart.php?id=<?php echo $product['product_id']; ?>"><i class="fa fa-shopping-bag"></i></a>
+                      <?php endif; ?>
+                    </div>
                   </div>
                 </div>
-              </div>
-          <?php
+              <?php
               }
-          } else {
+            } else {
               // Fallback static content
-          ?>
+              ?>
               <div class="col-lg-3 col-md-6">
                 <div class="item">
                   <div class="thumb">
@@ -302,7 +303,9 @@ $page_title = "GG - LUGX Gaming";
                   <div class="down-content">
                     <span class="category">RPG</span>
                     <h4>Elden Ring</h4>
-                    <a href="View/single_product.php?id=1"><i class="fa fa-shopping-bag"></i></a>
+                    <?php if (!is_admin()): ?>
+                      <a href="View/single_product.php?id=1"><i class="fa fa-shopping-bag"></i></a>
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
@@ -315,7 +318,9 @@ $page_title = "GG - LUGX Gaming";
                   <div class="down-content">
                     <span class="category">Strategy</span>
                     <h4>Civilization VI</h4>
-                    <a href="View/single_product.php?id=2"><i class="fa fa-shopping-bag"></i></a>
+                    <?php if (!is_admin()): ?>
+                      <a href="View/single_product.php?id=2"><i class="fa fa-shopping-bag"></i></a>
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
@@ -328,7 +333,9 @@ $page_title = "GG - LUGX Gaming";
                   <div class="down-content">
                     <span class="category">Indie</span>
                     <h4>Hollow Knight</h4>
-                    <a href="View/single_product.php?id=3"><i class="fa fa-shopping-bag"></i></a>
+                    <?php if (!is_admin()): ?>
+                      <a href="View/single_product.php?id=3"><i class="fa fa-shopping-bag"></i></a>
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
@@ -341,57 +348,59 @@ $page_title = "GG - LUGX Gaming";
                   <div class="down-content">
                     <span class="category">Action</span>
                     <h4>God of War</h4>
-                    <a href="View/single_product.php?id=4"><i class="fa fa-shopping-bag"></i></a>
+                    <?php if (!is_admin()): ?>
+                      <a href="View/single_product.php?id=4"><i class="fa fa-shopping-bag"></i></a>
+                    <?php endif; ?>
                   </div>
                 </div>
               </div>
-          <?php
-          }
-          ?>
+            <?php
+            }
+            ?>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="section most-played">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-6">
-            <div class="section-heading">
-              <h6>BESTSELLERS</h6>
-              <h2>Top Picks</h2>
+      <div class="section most-played">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="section-heading">
+                <h6>BESTSELLERS</h6>
+                <h2>Top Picks</h2>
+              </div>
             </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="main-button">
-              <a href="View/all_product.php">View All</a>
+            <div class="col-lg-6">
+              <div class="main-button">
+                <a href="View/all_product.php">View All</a>
+              </div>
             </div>
-          </div>
-          
-          <?php
-          // Display bestseller products
-          if ($bestseller_products['success'] && !empty($bestseller_products['data'])) {
+
+            <?php
+            // Display bestseller products
+            if ($bestseller_products['success'] && !empty($bestseller_products['data'])) {
               foreach ($bestseller_products['data'] as $product) {
-                  // Only display up to 6 products
-                  if (isset($count) && $count >= 6) break;
-                  $count = isset($count) ? $count + 1 : 1;
-          ?>
-              <div class="col-lg-2 col-md-6 col-sm-6">
-                <div class="item">
-                  <div class="thumb">
-                    <a href="View/single_product.php?id=<?php echo $product['product_id']; ?>"><img src="<?php echo $product['product_image']; ?>" alt="<?php echo $product['product_title']; ?>"></a>
-                  </div>
-                  <div class="down-content">
-                    <span class="category"><?php echo $product['cat_name']; ?></span>
-                    <h4><?php echo $product['product_title']; ?></h4>
-                    <a href="View/single_product.php?id=<?php echo $product['product_id']; ?>">Explore</a>
+                // Only display up to 6 products
+                if (isset($count) && $count >= 6) break;
+                $count = isset($count) ? $count + 1 : 1;
+            ?>
+                <div class="col-lg-2 col-md-6 col-sm-6">
+                  <div class="item">
+                    <div class="thumb">
+                      <a href="View/single_product.php?id=<?php echo $product['product_id']; ?>"><img src="<?php echo $product['product_image']; ?>" alt="<?php echo $product['product_title']; ?>"></a>
+                    </div>
+                    <div class="down-content">
+                      <span class="category"><?php echo $product['cat_name']; ?></span>
+                      <h4><?php echo $product['product_title']; ?></h4>
+                      <a href="View/single_product.php?id=<?php echo $product['product_id']; ?>">Explore</a>
+                    </div>
                   </div>
                 </div>
-              </div>
-          <?php
+              <?php
               }
-          } else {
+            } else {
               // Fallback static content
-          ?>
+              ?>
               <div class="col-lg-2 col-md-6 col-sm-6">
                 <div class="item">
                   <div class="thumb">
@@ -464,53 +473,57 @@ $page_title = "GG - LUGX Gaming";
                   </div>
                 </div>
               </div>
-          <?php
-          }
-          ?>
+            <?php
+            }
+            ?>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="section categories">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-12 text-center">
-            <div class="section-heading">
-              <h6>Browse By</h6>
-              <h2>Game Categories</h2>
+      <div class="section categories">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-12 text-center">
+              <div class="section-heading">
+                <h6>Browse By</h6>
+                <h2>Game Categories</h2>
+              </div>
             </div>
-          </div>
-          
-          <?php
-          // Display categories
-          if ($all_categories['success'] && !empty($all_categories['data'])) {
+
+            <?php
+            // Display categories
+            if ($all_categories['success'] && !empty($all_categories['data'])) {
               // Use the category layout from the template
               echo '<div class="row">';
               $counter = 0;
               foreach ($all_categories['data'] as $category) {
-                  // Only display up to 5 categories
-                  if ($counter >= 5) break;
-                  $counter++;
-                  
-                  // Image and CSS class
-                  $imagePath = "Images/categories-0" . $counter . ".jpg";
-          ?>
-              <div class="col-lg col-sm-6 col-xs-12">
-                <div class="item">
-                  <h4><?php echo $category['cat_name']; ?></h4>
-                  <div class="thumb">
-                    <a href="View/all_product.php?category=<?php echo $category['cat_id']; ?>">
-                      <img src="<?php echo $imagePath; ?>" alt="<?php echo $category['cat_name']; ?>">
-                    </a>
+                // Only display up to 5 categories
+                if ($counter >= 5) break;
+                $counter++;
+
+                // Image and CSS class
+                $imagePath = "Images/categories-0" . $counter . ".jpg";
+
+                // Count products in this category
+                $category_products = $productController->get_products_by_category_ctr($category['cat_id']);
+                $product_count = isset($category_products['data']) ? count($category_products['data']) : 0;
+            ?>
+                <div class="col-lg col-sm-6 col-xs-12">
+                  <div class="item">
+                    <h4><?php echo $category['cat_name']; ?> (<?php echo $product_count; ?>)</h4>
+                    <div class="thumb">
+                      <a href="View/all_product.php?category=<?php echo $category['cat_id']; ?>">
+                        <img src="<?php echo $imagePath; ?>" alt="<?php echo $category['cat_name']; ?>">
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-          <?php
+              <?php
               }
               echo '</div>';
-          } else {
+            } else {
               // Fallback static content
-          ?>
+              ?>
               <div class="col-lg col-sm-6 col-xs-12">
                 <div class="item">
                   <h4>Action</h4>
@@ -551,71 +564,73 @@ $page_title = "GG - LUGX Gaming";
                   </div>
                 </div>
               </div>
-          <?php
-          }
-          ?>
+            <?php
+            }
+            ?>
+          </div>
+        </div>
+      </div>
+
+      <div class="section cta">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-5">
+              <div class="shop">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="section-heading">
+                      <h6>Gaming Gear</h6>
+                      <h2>Level Up Your Setup With <em>Premium</em> Gaming Equipment!</h2>
+                    </div>
+                    <p>Discover our extensive collection of gaming peripherals, accessories, and hardware to enhance your gaming performance.</p>
+                    <div class="main-button">
+                      <a href="View/all_product.php">Shop Gear</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-5 offset-lg-2 align-self-end">
+              <div class="subscribe">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="section-heading">
+                      <h6>JOIN GG REWARDS</h6>
+                      <h2>Get 15% Off Your First Order When You <em>Subscribe</em>!</h2>
+                    </div>
+                    <div class="search-input">
+                      <form id="subscribe" action="#">
+                        <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Your email...">
+                        <button type="submit">Subscribe Now</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    
-    <div class="section cta">
+
+    <footer>
       <div class="container">
         <div class="row">
-          <div class="col-lg-5">
-            <div class="shop">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="section-heading">
-                    <h6>Gaming Gear</h6>
-                    <h2>Level Up Your Setup With <em>Premium</em> Gaming Equipment!</h2>
-                  </div>
-                  <p>Discover our extensive collection of gaming peripherals, accessories, and hardware to enhance your gaming performance.</p>
-                  <div class="main-button">
-                    <a href="View/all_product.php">Shop Gear</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-5 offset-lg-2 align-self-end">
-            <div class="subscribe">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="section-heading">
-                    <h6>JOIN GG REWARDS</h6>
-                    <h2>Get 15% Off Your First Order When You <em>Subscribe</em>!</h2>
-                  </div>
-                  <div class="search-input">
-                    <form id="subscribe" action="#">
-                      <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Your email...">
-                      <button type="submit">Subscribe Now</button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="col-lg-12 text-center">
+            <p>Copyright © 2025 GG - LUGX. All rights reserved. &nbsp;&nbsp; <a rel="nofollow" href="https://templatemo.com" target="_blank">Design: TemplateMo</a></p>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </footer>
 
-  <footer>
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12 text-center">
-          <p>Copyright © 2025 GG - LUGX. All rights reserved. &nbsp;&nbsp; <a rel="nofollow" href="https://templatemo.com" target="_blank">Design: TemplateMo</a></p>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Scripts -->
-  <script src="JS/jquery/jquery.min.js"></script>
-  <script src="JS/bootstrap/js/bootstrap.min.js"></script>
-  <script src="JS/isotope.min.js"></script>
-  <script src="JS/owl-carousel.js"></script>
-  <script src="JS/counter.js"></script>
-  <script src="JS/custom.js"></script>
+    <!-- Scripts -->
+    <script src="JS/jquery/jquery.min.js"></script>
+    <script src="JS/bootstrap/js/bootstrap.min.js"></script>
+    <script src="JS/isotope.min.js"></script>
+    <script src="JS/owl-carousel.js"></script>
+    <script src="JS/counter.js"></script>
+    <script src="JS/custom.js"></script>
 </body>
+
 </html>
+</div>
