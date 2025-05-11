@@ -65,4 +65,13 @@
             margin: 20px 0;
             border-top: 1px solid #ddd;
         }
+        
+        .currency-info {
+            background-color: #e9f7fd;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 10px;
+            border-left: 3px solid #17a2b8;
+        }
     

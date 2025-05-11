@@ -273,46 +273,6 @@ class CartClass extends db_connection
             return 0;
         }
     }
-
-    /**
-     * Create a new order from cart items
-     * @param int $customer_id - Customer ID
-     * @param float $order_amount - Order amount
-     * @param string $invoice_no - Invoice number
-     * @param string $order_status - Order status
-     * @return int|bool - Order ID if successful, false otherwise
-     */
-    public function create_order($customer_id, $order_amount, $invoice_no, $order_status = 'Pending')
-    {
-        try {
-            $conn = $this->db_conn();
-
-            // Create order
-            $sql = "INSERT INTO orders (customer_id, invoice_no, order_date, order_status, order_amount) 
-                    VALUES (?, ?, NOW(), ?, ?)";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("issd", $customer_id, $invoice_no, $order_status, $order_amount);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            // Get the order ID
-            $order_id = $conn->insert_id;
-
-            // Move cart items to order details
-            $this->move_cart_to_order_details($customer_id, $order_id);
-
-            return $order_id;
-        } catch (Exception $e) {
-            error_log("Error creating order: " . $e->getMessage());
-            return false;
-        }
-    }
-
     /**
      * Move cart items to order details
      * @param int $customer_id - Customer ID
@@ -371,52 +331,6 @@ class CartClass extends db_connection
             }
 
             error_log("Error moving cart to order details: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Record payment
-     * @param int $order_id - Order ID
-     * @param string $payment_method - Payment method
-     * @param float $amount - Payment amount
-     * @param string $currency - Currency code
-     * @param string $transaction_id - Transaction ID
-     * @return bool - True if successful, false otherwise
-     */
-    public function record_payment($order_id, $payment_method, $amount, $currency, $transaction_id)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            // Insert payment record
-            $sql = "INSERT INTO payment (order_id, pay_method, amt, currency, payment_date, pay_id) 
-                    VALUES (?, ?, ?, ?, NOW(), ?)";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("idsss", $order_id, $payment_method, $amount, $currency, $transaction_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            // Update order status
-            $sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = ?";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $order_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            return true;
-        } catch (Exception $e) {
-            error_log("Error recording payment: " . $e->getMessage());
             return false;
         }
     }
@@ -489,6 +403,262 @@ class CartClass extends db_connection
         } catch (Exception $e) {
             error_log("Error getting order items: " . $e->getMessage());
             return [];
+        }
+    }
+    /**
+     * Create a new order from cart items
+     * @param int $customer_id - Customer ID
+     * @param float $order_amount - Order amount
+     * @param string $invoice_no - Invoice number
+     * @param string $order_status - Order status
+     * @param string $reference - Transaction reference (optional)
+     * @return int|bool - Order ID if successful, false otherwise
+     */
+    public function create_order($customer_id, $order_amount, $invoice_no, $order_status = 'Pending', $reference = '')
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Create order
+            $sql = "INSERT INTO orders (customer_id, invoice_no, order_date, order_status, order_amount, reference) 
+                VALUES (?, ?, NOW(), ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("issds", $customer_id, $invoice_no, $order_status, $order_amount, $reference);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            // Get the order ID
+            $order_id = $conn->insert_id;
+
+            // Move cart items to order details
+            $this->move_cart_to_order_details($customer_id, $order_id);
+
+            return $order_id;
+        } catch (Exception $e) {
+            error_log("Error creating order: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get orders by reference
+     * @param string $reference - Transaction reference
+     * @return array - Orders with the given reference
+     */
+    public function get_orders_by_reference($reference)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT * FROM orders WHERE reference = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("s", $reference);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $orders = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $orders[] = $row;
+            }
+
+            return $orders;
+        } catch (Exception $e) {
+            error_log("Error getting orders by reference: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Record payment
+     * @param int $order_id - Order ID
+     * @param string $payment_method - Payment method
+     * @param float $amount - Payment amount (USD)
+     * @param string $currency - Currency code
+     * @param string $transaction_id - Transaction ID
+     * @param float $ghs_amount - Payment amount in GHS (optional)
+     * @param float $exchange_rate - Exchange rate used (optional)
+     * @return bool - True if successful, false otherwise
+     */
+    public function record_payment($order_id, $payment_method, $amount, $currency, $transaction_id, $ghs_amount = 0, $exchange_rate = 0)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Insert payment record
+            $sql = "INSERT INTO payment (order_id, pay_method, amt, currency, payment_date, pay_id, ghs_amount, exchange_rate) 
+                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("isdssdd", $order_id, $payment_method, $amount, $currency, $transaction_id, $ghs_amount, $exchange_rate);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            // Update order status
+            $sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $order_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log("Error recording payment: " . $e->getMessage());
+            return false;
+        }
+    }
+    /**
+     * Get all orders for admin
+     * @return array - Array of all orders
+     */
+    public function get_all_orders_admin()
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT o.*, c.customer_email 
+                FROM orders o
+                LEFT JOIN customer c ON o.customer_id = c.customer_id
+                ORDER BY o.order_date DESC";
+
+            $result = $this->db_query($sql);
+
+            if (!$result) {
+                return [];
+            }
+
+            return $this->db_fetch_all($sql);
+        } catch (Exception $e) {
+            error_log("Error in get_all_orders_admin: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get orders by status
+     * @param string $status - Order status
+     * @return array - Orders with the given status
+     */
+    public function get_orders_by_status($status)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT o.*, c.customer_email 
+                FROM orders o
+                LEFT JOIN customer c ON o.customer_id = c.customer_id
+                WHERE o.order_status = ?
+                ORDER BY o.order_date DESC";
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("s", $status);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $orders = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $orders[] = $row;
+            }
+
+            return $orders;
+        } catch (Exception $e) {
+            error_log("Error getting orders by status: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Update order status
+     * @param int $order_id - Order ID
+     * @param string $status - New status
+     * @return bool - True if successful, false otherwise
+     */
+    public function update_order_status($order_id, $status)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Validate status
+            $valid_statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
+            if (!in_array($status, $valid_statuses)) {
+                throw new Exception("Invalid status: $status");
+            }
+
+            $sql = "UPDATE orders SET order_status = ? WHERE order_id = ?";
+            $stmt = $conn->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("si", $status, $order_id);
+
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            return $stmt->affected_rows > 0;
+        } catch (Exception $e) {
+            error_log("Error updating order status: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get payment information for an order
+     * @param int $order_id - Order ID
+     * @return array|null - Payment information or null if not found
+     */
+    public function get_payment_info($order_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT * FROM payment WHERE order_id = ? LIMIT 1";
+            $stmt = $conn->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $order_id);
+
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            return $result->fetch_assoc();
+        } catch (Exception $e) {
+            error_log("Error getting payment info: " . $e->getMessage());
+            return null;
         }
     }
 }

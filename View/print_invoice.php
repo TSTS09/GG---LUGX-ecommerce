@@ -34,6 +34,13 @@ $order_data = $order['data'];
 
 // Get order items
 $order_items = $order_controller->get_order_items_ctr($order_id);
+
+// Get exchange rate from the order or from a default
+$exchange_rate = isset($_SESSION['exchange_rate']) ? $_SESSION['exchange_rate'] : 12.5;
+
+// Calculate GHS amount if available
+$usd_amount = $order_data['order_amount'];
+$ghs_amount = isset($_SESSION['ghs_amount']) ? $_SESSION['ghs_amount'] : ($usd_amount * $exchange_rate);
 ?>
 
 <!DOCTYPE html>
@@ -90,13 +97,20 @@ $order_items = $order_controller->get_order_items_ctr($order_id);
             </div>
         </div>
 
+        <!-- Currency information section -->
+        <div class="currency-info">
+            <p><strong>Currency Information:</strong></p>
+            <p>Payment processed in Ghanaian Cedis (GHS).</p>
+            <p>Exchange rate: 1 USD = <?php echo number_format($exchange_rate, 2); ?> GHS</p>
+        </div>
+
         <table class="invoice-table">
             <thead>
                 <tr>
                     <th>Product</th>
                     <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th class="text-right">Total</th>
+                    <th>Unit Price (USD)</th>
+                    <th class="text-right">Total (USD)</th>
                 </tr>
             </thead>
             <tbody>
@@ -126,8 +140,12 @@ $order_items = $order_controller->get_order_items_ctr($order_id);
                     <td class="text-right">$0.00</td>
                 </tr>
                 <tr class="total-row">
-                    <td colspan="3" class="text-right">Total</td>
+                    <td colspan="3" class="text-right">Total (USD)</td>
                     <td class="text-right">$<?php echo number_format($order_data['order_amount'], 2); ?></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" class="text-right">Total (GHS)</td>
+                    <td class="text-right">GH₵<?php echo number_format($ghs_amount, 2); ?></td>
                 </tr>
             </tbody>
         </table>
@@ -142,7 +160,7 @@ $order_items = $order_controller->get_order_items_ctr($order_id);
 
         <div class="invoice-footer">
             <p>Thank you for shopping with GG-LUGX. For any questions regarding this invoice, please contact customer support.</p>
-            <p>© 2025 GG-LUGX. All rights reserved.</p>
+            <p>© <?php echo date('Y'); ?> GG-LUGX. All rights reserved.</p>
         </div>
     </div>
 

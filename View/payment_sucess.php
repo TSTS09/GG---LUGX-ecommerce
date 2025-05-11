@@ -18,7 +18,9 @@ if (!isset($_SESSION['order_id']) || !isset($_SESSION['invoice_no']) || !isset($
 // Get order data from session
 $order_id = $_SESSION['order_id'];
 $invoice_no = $_SESSION['invoice_no'];
-$amount = $_SESSION['amount'];
+$amount = $_SESSION['amount']; // USD amount
+$ghs_amount = isset($_SESSION['ghs_amount']) ? $_SESSION['ghs_amount'] : ($amount * $_SESSION['exchange_rate']);
+$exchange_rate = isset($_SESSION['exchange_rate']) ? $_SESSION['exchange_rate'] : 12.5; // Default if not set
 $payment_date = $_SESSION['payment_date'];
 
 // Create cart controller instance
@@ -46,103 +48,8 @@ $order_items = $cart_controller->get_order_items_ctr($order_id);
     <link rel="stylesheet" href="../CSS/animate.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
     <link rel="icon" href="../Images/logo.png" type="image/png">
+    <link rel="stylesheet" href="../CSS/payment_success.css">
 
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-        
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        .main-content {
-            flex: 1 0 auto;
-            padding-bottom: 30px;
-        }
-        
-        footer {
-            flex-shrink: 0;
-            width: 100%;
-            margin-top: auto;
-        }
-        
-        .success-container {
-            max-width: 800px;
-            margin: 100px auto;
-            padding: 30px;
-        }
-        
-        .success-card {
-            background-color: #f8f9fa;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .success-icon {
-            color: #28a745;
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-        
-        .invoice-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 30px;
-        }
-        
-        .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-        
-        .invoice-title {
-            font-size: 24px;
-            color: #ee626b;
-        }
-        
-        .btn-continue {
-            background-color: #ee626b;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 25px;
-            font-size: 16px;
-            transition: all 0.3s;
-            margin-top: a0px;
-        }
-        
-        .btn-continue:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-        
-        .btn-print {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 25px;
-            font-size: 16px;
-            transition: all 0.3s;
-            margin-top: 20px;
-            margin-left: 10px;
-        }
-        
-        .btn-print:hover {
-            background-color: #5a6268;
-            color: white;
-        }
-    </style>
 </head>
 
 <body>
@@ -158,7 +65,7 @@ $order_items = $cart_controller->get_order_items_ctr($order_id);
                 <h2>Payment Successful!</h2>
                 <p>Your order has been placed successfully. Thank you for shopping with us!</p>
                 <p>An email has been sent to your registered email address with the order details.</p>
-                
+
                 <div class="mt-4">
                     <a href="../index.php" class="btn btn-continue">Continue Shopping</a>
                     <a href="print_invoice.php?id=<?php echo $order_id; ?>" target="_blank" class="btn btn-print">
@@ -166,7 +73,7 @@ $order_items = $cart_controller->get_order_items_ctr($order_id);
                     </a>
                 </div>
             </div>
-            
+
             <div class="invoice-container">
                 <div class="invoice-header">
                     <div>
@@ -178,15 +85,21 @@ $order_items = $cart_controller->get_order_items_ctr($order_id);
                         <img src="../Images/logo.png" alt="Logo" style="max-height: 50px;">
                     </div>
                 </div>
-                
+
+                <div class="currency-info">
+                    <p><i class="fa fa-info-circle"></i> <strong>Currency Information:</strong></p>
+                    <p>Your payment of <strong>GH₵<?php echo number_format($ghs_amount, 2); ?></strong> was processed in Ghanaian Cedis (GHS).</p>
+                    <p>Exchange rate applied: <strong>1 USD = <?php echo number_format($exchange_rate, 2); ?> GHS</strong></p>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
                             <tr>
                                 <th>Product</th>
                                 <th>Quantity</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
+                                <th>Unit Price (USD)</th>
+                                <th>Total (USD)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -207,13 +120,17 @@ $order_items = $cart_controller->get_order_items_ctr($order_id);
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                                <td colspan="3" class="text-right"><strong>Total (USD):</strong></td>
                                 <td><strong>$<?php echo number_format($amount, 2); ?></strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Total (GHS):</strong></td>
+                                <td><strong>GH₵<?php echo number_format($ghs_amount, 2); ?></strong></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
-                
+
                 <div class="mt-4">
                     <p><strong>Note:</strong> This is a receipt of your purchase. Please keep it for your records.</p>
                 </div>

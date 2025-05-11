@@ -94,6 +94,14 @@
             background-color: #dc3545;
         }
 
+        .currency-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid #17a2b8;
+            margin-bottom: 20px;
+        }
+
         @media print {
             .no-print {
                 display: none;

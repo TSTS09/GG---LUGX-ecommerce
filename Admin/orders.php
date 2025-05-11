@@ -7,11 +7,49 @@ if (!is_logged_in() || !is_admin()) {
     header("Location: ../Login/login.php");
     exit;
 }
-require_once("../Setting/db_class.php");
-require_once("../Controllers/admin_order_controller.php");
-$order_controller = new SimpleOrderController();
-// Get all orders
-$orders = $order_controller->get_all_orders();  
+
+require_once("../Controllers/cart_controller.php");
+require_once("../Controllers/customer_controller.php");
+
+// Create controller instances
+$cart_controller = new CartController();
+$customer_controller = new CustomerController();
+
+// Handle status update if submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_status'])) {
+    $order_id = (int)$_POST['order_id'];
+    $new_status = $_POST['new_status'];
+
+    $result = $cart_controller->update_order_status_ctr($order_id, $new_status);
+
+    if ($result) {
+        $_SESSION['message'] = [
+            'type' => 'success',
+            'text' => 'Order status updated successfully'
+        ];
+    } else {
+        $_SESSION['message'] = [
+            'type' => 'error',
+            'text' => 'Failed to update order status'
+        ];
+    }
+
+    // Redirect to avoid form resubmission
+    header("Location: order_management.php");
+    exit;
+}
+
+// Get all orders for admin
+$all_orders = $cart_controller->get_all_orders_admin_ctr();
+$completed_orders = $cart_controller->get_orders_by_status_ctr('Completed');
+$pending_orders = $cart_controller->get_orders_by_status_ctr('Pending');
+$processing_orders = $cart_controller->get_orders_by_status_ctr('Processing');
+$shipped_orders = $cart_controller->get_orders_by_status_ctr('Shipped');
+$delivered_orders = $cart_controller->get_orders_by_status_ctr('Delivered');
+$cancelled_orders = $cart_controller->get_orders_by_status_ctr('Cancelled');
+
+// Get current tab from GET or default to 'all'
+$current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
 ?>
 
 <!DOCTYPE html>
@@ -31,37 +69,7 @@ $orders = $order_controller->get_all_orders();
     <link rel="stylesheet" href="../CSS/admin-styles.css">
     <link rel="stylesheet" href="../CSS/admin.css">
     <link rel="icon" href="../Images/logo.png" type="image/png">
-    <link rel="stylesheet" href="../CSS/admin.css">
-    
-    <style>
-        .order-status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .status-processing {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-shipped {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .status-delivered {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .status-cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
+    <link rel="stylesheet" href="../CSS/admin-orders.css">
 </head>
 
 <body>
@@ -89,106 +97,310 @@ $orders = $order_controller->get_all_orders();
                     </div>
                     <?php unset($_SESSION['message']); ?>
                 <?php endif; ?>
-                
+
                 <div class="orders-table">
-                    <h4>All Orders</h4>
-                    <?php if ($orders['success'] && !empty($orders['data'])): ?>
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Invoice No</th>
-                                        <th>Customer</th>
-                                        <th>Date</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($orders['data'] as $order): ?>
+                    <h4>Order Management</h4>
+
+                    <!-- Navigation tabs -->
+                    <ul class="nav nav-tabs" id="orderTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'all' ? 'active' : ''; ?>" href="?tab=all">
+                                All Orders <span class="badge badge-pill"><?php echo count($all_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'completed' ? 'active' : ''; ?>" href="?tab=completed">
+                                Completed <span class="badge badge-pill"><?php echo count($completed_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'pending' ? 'active' : ''; ?>" href="?tab=pending">
+                                Pending <span class="badge badge-pill"><?php echo count($pending_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'processing' ? 'active' : ''; ?>" href="?tab=processing">
+                                Processing <span class="badge badge-pill"><?php echo count($processing_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'shipped' ? 'active' : ''; ?>" href="?tab=shipped">
+                                Shipped <span class="badge badge-pill"><?php echo count($shipped_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'shipped' ? 'active' : ''; ?>" href="?tab=shipped">
+                                Shipped <span class="badge badge-pill"><?php echo count($shipped_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'delivered' ? 'active' : ''; ?>" href="?tab=delivered">
+                                Delivered <span class="badge badge-pill"><?php echo count($delivered_orders); ?></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $current_tab === 'cancelled' ? 'active' : ''; ?>" href="?tab=cancelled">
+                                Cancelled <span class="badge badge-pill"><?php echo count($cancelled_orders); ?></span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Tab content -->
+                    <div class="tab-content" id="orderTabsContent">
+                        <!-- Display orders based on selected tab -->
+                        <?php
+                        // Determine which orders to display
+                        $orders_to_display = [];
+                        switch ($current_tab) {
+                            case 'completed':
+                                $orders_to_display = $completed_orders;
+                                break;
+                            case 'pending':
+                                $orders_to_display = $pending_orders;
+                                break;
+                            case 'processing':
+                                $orders_to_display = $processing_orders;
+                                break;
+                            case 'shipped':
+                                $orders_to_display = $shipped_orders;
+                                break;
+                            case 'delivered':
+                                $orders_to_display = $delivered_orders;
+                                break;
+                            case 'cancelled':
+                                $orders_to_display = $cancelled_orders;
+                                break;
+                            default:
+                                $orders_to_display = $all_orders;
+                                break;
+                        }
+
+                        if (!empty($orders_to_display)):
+                        ?>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
                                         <tr>
-                                            <td><?php echo $order['order_id']; ?></td>
-                                            <td><?php echo $order['invoice_no']; ?></td>
-                                            <td>
-                                                ID: <?php echo $order['customer_id']; ?><br>
-                                                <?php echo $order['customer_email']; ?>
-                                            </td>
-                                            <td><?php echo date('M d, Y', strtotime($order['order_date'])); ?></td>
-                                            <td>$<?php echo number_format($order['order_amount'], 2); ?></td>
-                                            <td>
-                                                <?php
-                                                $status_class = '';
-                                                switch ($order['order_status']) {
-                                                    case 'Processing':
-                                                        $status_class = 'status-processing';
-                                                        break;
-                                                    case 'Shipped':
-                                                        $status_class = 'status-shipped';
-                                                        break;
-                                                    case 'Delivered':
-                                                        $status_class = 'status-delivered';
-                                                        break;
-                                                    case 'Cancelled':
-                                                        $status_class = 'status-cancelled';
-                                                        break;
-                                                }
-                                                ?>
-                                                <span class="order-status <?php echo $status_class; ?>">
-                                                    <?php echo $order['order_status']; ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#statusModal<?php echo $order['order_id']; ?>">
-                                                    Update Status
-                                                </button>
-                                                <a href="../View/print_invoice.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-info" target="_blank">
-                                                    View Invoice
-                                                </a>
-                                            </td>
+                                            <th>Order ID</th>
+                                            <th>Invoice No</th>
+                                            <th>Customer</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
                                         </tr>
-                                        
-                                        <!-- Update Status Modal -->
-                                        <div class="modal fade" id="statusModal<?php echo $order['order_id']; ?>" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel<?php echo $order['order_id']; ?>" aria-hidden="true">
-                                            <div class="modal-dialog" role="document">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="statusModalLabel<?php echo $order['order_id']; ?>">Update Order Status</h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                            <span aria-hidden="true">&times;</span>
-                                                        </button>
-                                                    </div>
-                                                    <form action="orders.php" method="POST">
-                                                        <div class="modal-body">
-                                                            <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
-                                                            
-                                                            <div class="form-group">
-                                                                <label for="new_status<?php echo $order['order_id']; ?>">Current Status: <span class="order-status <?php echo $status_class; ?>"><?php echo $order['order_status']; ?></span></label>
-                                                                <select class="form-control" id="new_status<?php echo $order['order_id']; ?>" name="new_status" required>
-                                                                    <option value="">Select New Status</option>
-                                                                    <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                                                                    <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
-                                                                    <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
-                                                                    <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                                                </select>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($orders_to_display as $order): ?>
+                                            <?php
+                                            // Get customer info
+                                            $customer = $customer_controller->get_one_customer_ctr($order['customer_id']);
+
+                                            // Get payment info
+                                            $payment_info = $cart_controller->get_payment_info_ctr($order['order_id']);
+
+                                            // Determine status class
+                                            $status_class = '';
+                                            switch ($order['order_status']) {
+                                                case 'Pending':
+                                                    $status_class = 'status-pending';
+                                                    break;
+                                                case 'Processing':
+                                                    $status_class = 'status-processing';
+                                                    break;
+                                                case 'Shipped':
+                                                    $status_class = 'status-shipped';
+                                                    break;
+                                                case 'Delivered':
+                                                    $status_class = 'status-delivered';
+                                                    break;
+                                                case 'Completed':
+                                                    $status_class = 'status-completed';
+                                                    break;
+                                                case 'Cancelled':
+                                                    $status_class = 'status-cancelled';
+                                                    break;
+                                            }
+                                            ?>
+                                            <tr>
+                                                <td><?php echo $order['order_id']; ?></td>
+                                                <td><?php echo $order['invoice_no']; ?></td>
+                                                <td>
+                                                    <?php if ($customer): ?>
+                                                        <?php echo htmlspecialchars($customer['customer_name']); ?><br>
+                                                        <small><?php echo htmlspecialchars($customer['customer_email']); ?></small>
+                                                    <?php else: ?>
+                                                        ID: <?php echo $order['customer_id']; ?><br>
+                                                        <small class="text-muted">Customer details not found</small>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td><?php echo date('M d, Y', strtotime($order['order_date'])); ?></td>
+                                                <td>
+                                                    $<?php echo number_format($order['order_amount'], 2); ?>
+                                                    <?php if (isset($payment_info) && !empty($payment_info) && isset($payment_info['ghs_amount']) && $payment_info['ghs_amount'] > 0): ?>
+                                                        <br><small class="text-muted">(GH₵<?php echo number_format($payment_info['ghs_amount'], 2); ?>)</small>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <span class="order-status <?php echo $status_class; ?>">
+                                                        <?php echo $order['order_status']; ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#statusModal<?php echo $order['order_id']; ?>">
+                                                        Update Status
+                                                    </button>
+                                                    <button class="btn btn-sm btn-info btn-view-details" data-order-id="<?php echo $order['order_id']; ?>">
+                                                        View Details
+                                                    </button>
+                                                    <a href="../View/print_invoice.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-secondary" target="_blank">
+                                                        <i class="fa fa-print"></i> Invoice
+                                                    </a>
+                                                </td>
+                                            </tr>
+
+                                            <!-- Order Details Row -->
+                                            <tr class="order-details-row" id="orderDetails<?php echo $order['order_id']; ?>">
+                                                <td colspan="7">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h5 class="mb-0">Order Details #<?php echo $order['order_id']; ?></h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <h6>Order Information</h6>
+                                                                    <p><strong>Invoice:</strong> <?php echo $order['invoice_no']; ?></p>
+                                                                    <p><strong>Date:</strong> <?php echo date('F j, Y', strtotime($order['order_date'])); ?></p>
+                                                                    <p><strong>Status:</strong> <span class="order-status <?php echo $status_class; ?>"><?php echo $order['order_status']; ?></span></p>
+                                                                    <?php if (isset($order['reference']) && !empty($order['reference'])): ?>
+                                                                        <p><strong>Reference:</strong> <?php echo $order['reference']; ?></p>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <h6>Customer Information</h6>
+                                                                    <?php if ($customer): ?>
+                                                                        <p><strong>Name:</strong> <?php echo htmlspecialchars($customer['customer_name']); ?></p>
+                                                                        <p><strong>Email:</strong> <?php echo htmlspecialchars($customer['customer_email']); ?></p>
+                                                                        <p><strong>Phone:</strong> <?php echo htmlspecialchars($customer['customer_contact']); ?></p>
+                                                                        <p><strong>Location:</strong> <?php echo htmlspecialchars($customer['customer_city'] . ', ' . $customer['customer_country']); ?></p>
+                                                                    <?php else: ?>
+                                                                        <p>Customer details not available</p>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Payment Information -->
+                                                            <?php if (isset($payment_info) && !empty($payment_info)): ?>
+                                                                <div class="payment-info mt-3">
+                                                                    <h6>Payment Information</h6>
+                                                                    <p><strong>Payment Method:</strong> <?php echo $payment_info['pay_method']; ?></p>
+                                                                    <p><strong>Amount:</strong> $<?php echo number_format($payment_info['amt'], 2); ?> <?php echo $payment_info['currency']; ?></p>
+                                                                    <?php if (isset($payment_info['ghs_amount']) && $payment_info['ghs_amount'] > 0): ?>
+                                                                        <p><strong>Amount (GHS):</strong> GH₵<?php echo number_format($payment_info['ghs_amount'], 2); ?></p>
+                                                                    <?php endif; ?>
+                                                                    <?php if (isset($payment_info['exchange_rate']) && $payment_info['exchange_rate'] > 0): ?>
+                                                                        <p class="currency-info"><small>Exchange Rate: 1 USD = <?php echo number_format($payment_info['exchange_rate'], 2); ?> GHS</small></p>
+                                                                    <?php endif; ?>
+                                                                    <p><strong>Payment Date:</strong> <?php echo date('F j, Y', strtotime($payment_info['payment_date'])); ?></p>
+                                                                    <p><strong>Transaction ID:</strong> <?php echo $payment_info['pay_id']; ?></p>
+                                                                </div>
+                                                            <?php endif; ?>
+
+                                                            <!-- Order Items -->
+                                                            <div class="mt-3">
+                                                                <h6>Order Items</h6>
+                                                                <?php
+                                                                $order_items = $cart_controller->get_order_items_ctr($order['order_id']);
+                                                                if ($order_items['success'] && !empty($order_items['data'])):
+                                                                ?>
+                                                                    <div class="table-responsive">
+                                                                        <table class="table table-sm">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th>Product</th>
+                                                                                    <th>Quantity</th>
+                                                                                    <th>Price</th>
+                                                                                    <th>Total</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                <?php foreach ($order_items['data'] as $item): ?>
+                                                                                    <tr>
+                                                                                        <td>
+                                                                                            <?php if (!empty($item['product_image'])): ?>
+                                                                                                <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" style="width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">
+                                                                                            <?php endif; ?>
+                                                                                            <?php echo $item['product_title']; ?>
+                                                                                        </td>
+                                                                                        <td><?php echo $item['qty']; ?></td>
+                                                                                        <td>$<?php echo number_format($item['product_price'], 2); ?></td>
+                                                                                        <td>$<?php echo number_format($item['product_price'] * $item['qty'], 2); ?></td>
+                                                                                    </tr>
+                                                                                <?php endforeach; ?>
+                                                                            </tbody>
+                                                                            <tfoot>
+                                                                                <tr>
+                                                                                    <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                                                                                    <td><strong>$<?php echo number_format($order['order_amount'], 2); ?></strong></td>
+                                                                                </tr>
+                                                                            </tfoot>
+                                                                        </table>
+                                                                    </div>
+                                                                <?php else: ?>
+                                                                    <p>No items found for this order.</p>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                                            <button type="submit" name="update_status" class="btn btn-primary">Update Status</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <!-- Update Status Modal -->
+                                            <div class="modal fade" id="statusModal<?php echo $order['order_id']; ?>" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel<?php echo $order['order_id']; ?>" aria-hidden="true">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="statusModalLabel<?php echo $order['order_id']; ?>">Update Order Status</h5>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
                                                         </div>
-                                                    </form>
+                                                        <form action="order_management.php" method="POST">
+                                                            <div class="modal-body">
+                                                                <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
+
+                                                                <div class="form-group">
+                                                                    <label for="new_status<?php echo $order['order_id']; ?>">Current Status: <span class="order-status <?php echo $status_class; ?>"><?php echo $order['order_status']; ?></span></label>
+                                                                    <select class="form-control" id="new_status<?php echo $order['order_id']; ?>" name="new_status" required>
+                                                                        <option value="">Select New Status</option>
+                                                                        <option value="Pending" <?php echo $order['order_status'] === 'Pending' ? 'selected' : ''; ?>>Pending</option>
+                                                                        <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                                                                        <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
+                                                                        <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
+                                                                        <option value="Completed" <?php echo $order['order_status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
+                                                                        <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                                <button type="submit" name="update_status" class="btn btn-primary">Update Status</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <p>No orders found.</p>
-                    <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-info">
+                                No orders found in this category.
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -203,6 +415,16 @@ $orders = $order_controller->get_all_orders();
     <!-- Scripts -->
     <script src="../JS/jquery/jquery.min.js"></script>
     <script src="../JS/bootstrap/js/bootstrap.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Toggle order details
+            $('.btn-view-details').on('click', function() {
+                const orderId = $(this).data('order-id');
+                $('#orderDetails' + orderId).toggle();
+            });
+        });
+    </script>
 </body>
 
 </html>

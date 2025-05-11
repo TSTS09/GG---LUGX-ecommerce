@@ -1,0 +1,108 @@
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1 0 auto;
+            padding-bottom: 30px;
+        }
+
+        footer {
+            flex-shrink: 0;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .success-container {
+            max-width: 800px;
+            margin: 100px auto;
+            padding: 30px;
+        }
+
+        .success-card {
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .success-icon {
+            color: #28a745;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .invoice-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .invoice-title {
+            font-size: 24px;
+            color: #ee626b;
+        }
+
+        .btn-continue {
+            background-color: #ee626b;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn-continue:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-print {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-top: 20px;
+            margin-left: 10px;
+        }
+
+        .btn-print:hover {
+            background-color: #5a6268;
+            color: white;
+        }
+
+        .currency-info {
+            background-color: #e9f7fd;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-left: 3px solid #17a2b8;
+            text-align: left;
+        }
+    

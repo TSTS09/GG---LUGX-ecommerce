@@ -35,8 +35,65 @@ if (!$cart_items['success'] || empty($cart_items['data'])) {
 // Initialize PayStack integration
 $paystack_public_key = "pk_test_942e4174c8bdc335aed436d07ba8c9ee1eda6831"; 
 $email = $customer['customer_email'];
-$amount = $cart_total * 100; // Convert to kobo (smallest currency unit)
 $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
+
+// Currency conversion from USD to GHS
+// First, try to get the current exchange rate from an API
+function get_exchange_rate() {
+    // Default exchange rate in case API fails (1 USD = 12.5 GHS as an example)
+    $default_rate = 12.5;
+    
+    try {
+        // Try with ExchangeRate-API (free tier)
+        $api_url = "https://open.er-api.com/v6/latest/USD";
+        $response = @file_get_contents($api_url);
+        
+        if ($response !== false) {
+            $data = json_decode($response, true);
+            if (isset($data['rates']['GHS'])) {
+                error_log("Exchange rate from API: 1 USD = " . $data['rates']['GHS'] . " GHS");
+                return $data['rates']['GHS'];
+            }
+        }
+        
+        // Try with alternative API if first one fails
+        $backup_api = "https://api.exchangerate.host/latest?base=USD&symbols=GHS";
+        $backup_response = @file_get_contents($backup_api);
+        
+        if ($backup_response !== false) {
+            $backup_data = json_decode($backup_response, true);
+            if (isset($backup_data['rates']['GHS'])) {
+                error_log("Exchange rate from backup API: 1 USD = " . $backup_data['rates']['GHS'] . " GHS");
+                return $backup_data['rates']['GHS'];
+            }
+        }
+        
+        // If APIs fail, log the error and return default rate
+        error_log("Could not get exchange rate from APIs, using default rate: 1 USD = " . $default_rate . " GHS");
+        return $default_rate;
+    } catch (Exception $e) {
+        error_log("Error getting exchange rate: " . $e->getMessage());
+        return $default_rate;
+    }
+}
+
+// Get the exchange rate
+$exchange_rate = get_exchange_rate();
+
+// Convert the USD amount to GHS
+$usd_total = $cart_total;
+$ghs_total = $usd_total * $exchange_rate;
+
+// Store these in session for use in process_payment.php
+$_SESSION['usd_total'] = $usd_total;
+$_SESSION['ghs_total'] = $ghs_total;
+$_SESSION['exchange_rate'] = $exchange_rate;
+
+// Amount in pesewas for Paystack (smallest currency unit)
+$amount = round($ghs_total * 100);
+
+// Currency should be GHS for Ghana-based Paystack accounts
+$currency = "GHS";
 ?>
 
 <!DOCTYPE html>
@@ -83,8 +140,8 @@ $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
                                     <tr>
                                         <th>Product</th>
                                         <th>Quantity</th>
-                                        <th>Price</th>
-                                        <th>Total</th>
+                                        <th>Price (USD)</th>
+                                        <th>Total (USD)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -104,19 +161,27 @@ $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
-                                        <td>$<?php echo number_format($cart_total, 2); ?></td>
+                                        <td colspan="3" class="text-right"><strong>Subtotal (USD):</strong></td>
+                                        <td>$<?php echo number_format($usd_total, 2); ?></td>
                                     </tr>
                                     <tr>
                                         <td colspan="3" class="text-right"><strong>Shipping:</strong></td>
                                         <td>$0.00</td>
                                     </tr>
                                     <tr>
-                                        <td colspan="3" class="text-right"><strong>Total:</strong></td>
-                                        <td><strong>$<?php echo number_format($cart_total, 2); ?></strong></td>
+                                        <td colspan="3" class="text-right"><strong>Total (USD):</strong></td>
+                                        <td><strong>$<?php echo number_format($usd_total, 2); ?></strong></td>
+                                    </tr>
+                                    <tr class="bg-light">
+                                        <td colspan="3" class="text-right"><strong>Total (GHS):</strong></td>
+                                        <td><strong>GH₵<?php echo number_format($ghs_total, 2); ?></strong></td>
                                     </tr>
                                 </tfoot>
                             </table>
+                        </div>
+                        
+                        <div class="currency-info">
+                            <p><i class="fa fa-info-circle"></i> <strong>Currency Conversion:</strong> Your payment will be processed in Ghanaian Cedis (GHS). Current exchange rate: 1 USD = <?php echo number_format($exchange_rate, 2); ?> GHS</p>
                         </div>
                     </div>
                 </div>
@@ -140,7 +205,7 @@ $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
                             <p>Pay securely via PayStack</p>
                             
                             <div class="mt-3">
-                                <button type="button" class="btn btn-pay" onclick="payWithPaystack()">Pay Now $<?php echo number_format($cart_total, 2); ?></button>
+                                <button type="button" class="btn btn-pay" onclick="payWithPaystack()">Pay Now GH₵<?php echo number_format($ghs_total, 2); ?></button>
                             </div>
                             
                             <div class="mt-3">
@@ -166,7 +231,7 @@ $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
                 key: '<?php echo $paystack_public_key; ?>',
                 email: '<?php echo $email; ?>',
                 amount: <?php echo $amount; ?>,
-                currency: 'NGN',
+                currency: '<?php echo $currency; ?>',
                 ref: '<?php echo $reference; ?>',
                 callback: function(response){
                     // Redirect to process payment

@@ -1,0 +1,91 @@
+
+        .order-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-processing {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .status-shipped {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-delivered {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+
+        .nav-tabs .nav-link {
+            color: #495057;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #ee626b;
+            border-color: #ee626b;
+        }
+
+        .badge {
+            margin-left: 5px;
+            background-color: #6c757d;
+        }
+
+        .nav-link.active .badge {
+            background-color: #fff;
+            color: #ee626b;
+        }
+
+        .order-details-row {
+            display: none;
+            background-color: #f9f9f9;
+        }
+
+        .btn-view-details {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+
+        .payment-info {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .currency-info {
+            font-style: italic;
+            color: #6c757d;
+        }
+    
