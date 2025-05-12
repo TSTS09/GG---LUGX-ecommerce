@@ -419,28 +419,41 @@ class CartClass extends db_connection
         try {
             $conn = $this->db_conn();
 
-            // Create order
+            // Log all parameters for debugging
+            error_log("Creating order with: customer_id=$customer_id, amount=$order_amount, invoice=$invoice_no, status=$order_status, ref=$reference");
+
+            // Create order with all required fields
             $sql = "INSERT INTO orders (customer_id, invoice_no, order_date, order_status, order_amount, reference) 
                 VALUES (?, ?, NOW(), ?, ?, ?)";
+
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+                error_log("Prepare statement failed: " . $conn->error);
+                return false;
             }
 
-            $stmt->bind_param("issds", $customer_id, $invoice_no, $order_status, $order_amount, $reference);
+            // Include order_amount in the parameter binding
+            $stmt->bind_param("iisds", $customer_id, $invoice_no, $order_status, $order_amount, $reference);
+
             if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
+                error_log("Execute statement failed: " . $stmt->error);
+                return false;
             }
 
             // Get the order ID
             $order_id = $conn->insert_id;
+            error_log("Order created successfully with ID: $order_id");
 
             // Move cart items to order details
-            $this->move_cart_to_order_details($customer_id, $order_id);
+            $result = $this->move_cart_to_order_details($customer_id, $order_id);
+            if (!$result) {
+                error_log("Failed to move cart items to order details");
+                return false;
+            }
 
             return $order_id;
         } catch (Exception $e) {
-            error_log("Error creating order: " . $e->getMessage());
+            error_log("Exception in create_order: " . $e->getMessage());
             return false;
         }
     }
@@ -487,43 +500,61 @@ class CartClass extends db_connection
      * @param float $amount - Payment amount (USD)
      * @param string $currency - Currency code
      * @param string $transaction_id - Transaction ID
-     * @param float $ghs_amount - Payment amount in GHS (optional)
-     * @param float $exchange_rate - Exchange rate used (optional)
+     * @param float $ghs_amount - Payment amount in GHS
+     * @param float $exchange_rate - Exchange rate used
      * @return bool - True if successful, false otherwise
      */
     public function record_payment($order_id, $payment_method, $amount, $currency, $transaction_id, $ghs_amount = 0, $exchange_rate = 0)
     {
         try {
+            // Establish a fresh database connection
             $conn = $this->db_conn();
 
-            // Insert payment record
-            $sql = "INSERT INTO payment (order_id, pay_method, amt, currency, payment_date, pay_id, ghs_amount, exchange_rate) 
-                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+            // Exit early with detailed error if connection fails
+            if (!$conn) {
+                error_log("Database connection failed in record_payment");
+                return false;
             }
 
-            $stmt->bind_param("isdssdd", $order_id, $payment_method, $amount, $currency, $transaction_id, $ghs_amount, $exchange_rate);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
+            // Log debug info
+            error_log("Recording payment: order_id=$order_id, amount=$amount, currency=$currency");
+
+            // Get customer_id from the order using direct query to avoid connection issues
+            $customer_id = 0;
+            $get_customer_query = "SELECT customer_id FROM orders WHERE order_id = $order_id";
+            $result = mysqli_query($conn, $get_customer_query);
+
+            if ($result && $row = mysqli_fetch_assoc($result)) {
+                $customer_id = $row['customer_id'];
+            } else {
+                error_log("Failed to get customer_id for order $order_id");
+                return false;
             }
 
-            // Update order status
-            $sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = ?";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
+            // Do direct query insertion instead of prepared statement to simplify
+            $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_date, ghs_amount, exchange_rate) 
+                VALUES ($amount, $customer_id, $order_id, '$currency', NOW(), $ghs_amount, $exchange_rate)";
+
+            error_log("Executing SQL: $sql");
+            $insert_result = mysqli_query($conn, $sql);
+
+            if (!$insert_result) {
+                error_log("Payment insert failed: " . mysqli_error($conn));
+                return false;
             }
 
-            $stmt->bind_param("i", $order_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
+            // Update order status using direct query
+            $update_sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = $order_id";
+            $update_result = mysqli_query($conn, $update_sql);
+
+            if (!$update_result) {
+                error_log("Order status update failed: " . mysqli_error($conn));
+                return false;
             }
 
             return true;
         } catch (Exception $e) {
-            error_log("Error recording payment: " . $e->getMessage());
+            error_log("Exception in record_payment: " . $e->getMessage());
             return false;
         }
     }

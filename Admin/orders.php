@@ -1,5 +1,11 @@
 <?php
-session_start();
+// Place this at the top of your orders.php file in the admin panel
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once("../Setting/core.php");
 
 // Check if user is logged in and is admin
@@ -15,29 +21,63 @@ require_once("../Controllers/customer_controller.php");
 $cart_controller = new CartController();
 $customer_controller = new CustomerController();
 
+// Debug status updates - uncomment this when testing
+// error_log("Order status update handler running");
+
 // Handle status update if submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_status'])) {
-    $order_id = (int)$_POST['order_id'];
-    $new_status = $_POST['new_status'];
+    // Capture the form data
+    $order_id = isset($_POST['order_id']) ? (int)$_POST['order_id'] : 0;
+    $new_status = isset($_POST['new_status']) ? $_POST['new_status'] : '';
 
-    $result = $cart_controller->update_order_status_ctr($order_id, $new_status);
+    // Debug information
+    // error_log("Update Status Form Submitted - Order ID: $order_id, New Status: $new_status");
 
-    if ($result) {
-        $_SESSION['message'] = [
-            'type' => 'success',
-            'text' => 'Order status updated successfully'
-        ];
-    } else {
+    // Validate inputs
+    if ($order_id <= 0) {
         $_SESSION['message'] = [
             'type' => 'error',
-            'text' => 'Failed to update order status'
+            'text' => 'Invalid order ID'
         ];
+    } else if (empty($new_status)) {
+        $_SESSION['message'] = [
+            'type' => 'error',
+            'text' => 'Please select a status'
+        ];
+    } else {
+        // Validate the status value
+        $valid_statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
+        if (!in_array($new_status, $valid_statuses)) {
+            $_SESSION['message'] = [
+                'type' => 'error',
+                'text' => 'Invalid status selected'
+            ];
+        } else {
+            // Try to update the status
+            $result = $cart_controller->update_order_status_ctr($order_id, $new_status);
+
+            if ($result) {
+                $_SESSION['message'] = [
+                    'type' => 'success',
+                    'text' => "Order #$order_id status updated to $new_status successfully"
+                ];
+            } else {
+                $_SESSION['message'] = [
+                    'type' => 'error',
+                    'text' => 'Failed to update order status. Please try again.'
+                ];
+            }
+        }
     }
 
-    // Redirect to avoid form resubmission
-    header("Location: order_management.php");
+    // Redirect to avoid form resubmission - maintain the current tab
+    $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
+    header("Location: orders.php?tab=" . $current_tab);
     exit;
 }
+
+// The rest of your orders.php code follows...
+?>
 
 // Get all orders for admin
 $all_orders = $cart_controller->get_all_orders_admin_ctr();
@@ -101,6 +141,13 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                 <div class="orders-table">
                     <h4>Order Management</h4>
 
+                    <!-- Export Orders Button -->
+                    <div class="mb-3">
+                        <a href="../View/export_all_orders.php?tab=<?php echo $current_tab; ?>" class="btn btn-primary" target="_blank">
+                            <i class="fa fa-file-pdf-o"></i> Export <?php echo ucfirst($current_tab); ?> Orders to PDF
+                        </a>
+                    </div>
+
                     <!-- Navigation tabs -->
                     <ul class="nav nav-tabs" id="orderTabs" role="tablist">
                         <li class="nav-item">
@@ -121,11 +168,6 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                         <li class="nav-item">
                             <a class="nav-link <?php echo $current_tab === 'processing' ? 'active' : ''; ?>" href="?tab=processing">
                                 Processing <span class="badge badge-pill"><?php echo count($processing_orders); ?></span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo $current_tab === 'shipped' ? 'active' : ''; ?>" href="?tab=shipped">
-                                Shipped <span class="badge badge-pill"><?php echo count($shipped_orders); ?></span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -253,9 +295,6 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                     <button class="btn btn-sm btn-info btn-view-details" data-order-id="<?php echo $order['order_id']; ?>">
                                                         View Details
                                                     </button>
-                                                    <a href="../View/print_invoice.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-secondary" target="_blank">
-                                                        <i class="fa fa-print"></i> Invoice
-                                                    </a>
                                                 </td>
                                             </tr>
 
@@ -294,7 +333,6 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                             <?php if (isset($payment_info) && !empty($payment_info)): ?>
                                                                 <div class="payment-info mt-3">
                                                                     <h6>Payment Information</h6>
-                                                                    <p><strong>Payment Method:</strong> <?php echo $payment_info['pay_method']; ?></p>
                                                                     <p><strong>Amount:</strong> $<?php echo number_format($payment_info['amt'], 2); ?> <?php echo $payment_info['currency']; ?></p>
                                                                     <?php if (isset($payment_info['ghs_amount']) && $payment_info['ghs_amount'] > 0): ?>
                                                                         <p><strong>Amount (GHS):</strong> GH₵<?php echo number_format($payment_info['ghs_amount'], 2); ?></p>
@@ -303,7 +341,6 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                                         <p class="currency-info"><small>Exchange Rate: 1 USD = <?php echo number_format($payment_info['exchange_rate'], 2); ?> GHS</small></p>
                                                                     <?php endif; ?>
                                                                     <p><strong>Payment Date:</strong> <?php echo date('F j, Y', strtotime($payment_info['payment_date'])); ?></p>
-                                                                    <p><strong>Transaction ID:</strong> <?php echo $payment_info['pay_id']; ?></p>
                                                                 </div>
                                                             <?php endif; ?>
 
@@ -366,7 +403,9 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                                 <span aria-hidden="true">&times;</span>
                                                             </button>
                                                         </div>
-                                                        <form action="order_management.php" method="POST">
+
+                                                        <!-- Leave action empty to post to the current page -->
+                                                        <form action="" method="POST">
                                                             <div class="modal-body">
                                                                 <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
 
@@ -418,6 +457,9 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
 
     <script>
         $(document).ready(function() {
+            // Hide all order details rows initially
+            $('.order-details-row').hide();
+
             // Toggle order details
             $('.btn-view-details').on('click', function() {
                 const orderId = $(this).data('order-id');
