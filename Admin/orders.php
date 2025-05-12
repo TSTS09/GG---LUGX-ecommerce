@@ -76,8 +76,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_status'])) {
     exit;
 }
 
-// The rest of your orders.php code follows...
-?>
 
 // Get all orders for admin
 $all_orders = $cart_controller->get_all_orders_admin_ctr();
