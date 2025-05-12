@@ -13,7 +13,9 @@ $customer_id = $_SESSION['customer_id'];
 
 // Include order controller
 require_once("../Controllers/order_controller.php");
+require_once("../Controllers/cart_controller.php");
 $order_controller = new OrderController();
+$cart_controller = new CartController();
 
 // Get customer orders
 $orders = $order_controller->get_customer_orders_ctr($customer_id);
@@ -43,7 +45,27 @@ $page_title = "My Orders - Track Your Purchases";
 
     <title><?php echo $page_title; ?></title>
 
-    
+    <style>
+        .order-details {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .product-image-small {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        
+        .view-details-btn {
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
@@ -84,7 +106,16 @@ $page_title = "My Orders - Track Your Purchases";
                                             case 'Processing':
                                                 $status_class = 'status-processing';
                                                 break;
-                                            case 'Canceled':
+                                            case 'Shipped':
+                                                $status_class = 'status-shipped';
+                                                break;
+                                            case 'Delivered':
+                                                $status_class = 'status-delivered';
+                                                break;
+                                            case 'Pending':
+                                                $status_class = 'status-pending';
+                                                break;
+                                            case 'Cancelled':
                                                 $status_class = 'status-canceled';
                                                 break;
                                             default:
@@ -101,17 +132,23 @@ $page_title = "My Orders - Track Your Purchases";
                                         <p><strong>Total Amount:</strong> $<?php echo number_format($order['order_amount'], 2); ?></p>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <a href="order_details.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-info">View Details</a>
+                                        <a href="order_details.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-info">
+                                            <i class="fa fa-eye"></i> View Details
+                                        </a>
+                                        <a href="javascript:void(0)" class="btn btn-sm btn-secondary view-details-btn" data-order="<?php echo $order['order_id']; ?>">
+                                            <i class="fa fa-list"></i> Quick View
+                                        </a>
                                         <a href="print_invoice.php?id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-print" target="_blank">
                                             <i class="fa fa-print"></i> Print Invoice
                                         </a>
                                     </div>
                                 </div>
 
-                                <div class="order-items">
+                                <!-- Order Details Section (hidden by default) -->
+                                <div class="order-details" id="details-<?php echo $order['order_id']; ?>">
                                     <h6>Order Items</h6>
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-borderless">
+                                        <table class="table table-sm">
                                             <thead>
                                                 <tr>
                                                     <th>Product</th>
@@ -122,25 +159,35 @@ $page_title = "My Orders - Track Your Purchases";
                                             </thead>
                                             <tbody>
                                                 <?php
-                                                $order_items = $order_controller->get_order_items_ctr($order['order_id']);
+                                                // Use cart controller to get order items for better compatibility
+                                                $order_items = $cart_controller->get_order_items_ctr($order['order_id']);
                                                 if ($order_items['success'] && !empty($order_items['data'])):
                                                     foreach ($order_items['data'] as $item):
                                                 ?>
                                                         <tr>
-                                                            <td><?php echo $item['product_title']; ?></td>
+                                                            <td>
+                                                                <?php if (!empty($item['product_image'])): ?>
+                                                                    <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" class="product-image-small">
+                                                                <?php endif; ?>
+                                                                <?php echo $item['product_title']; ?>
+                                                            </td>
                                                             <td><?php echo $item['qty']; ?></td>
                                                             <td>$<?php echo number_format($item['product_price'], 2); ?></td>
                                                             <td>$<?php echo number_format($item['product_price'] * $item['qty'], 2); ?></td>
                                                         </tr>
-                                                    <?php
-                                                    endforeach;
-                                                else:
-                                                    ?>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
                                                     <tr>
                                                         <td colspan="4">No items found for this order.</td>
                                                     </tr>
                                                 <?php endif; ?>
                                             </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                                                    <td><strong>$<?php echo number_format($order['order_amount'], 2); ?></strong></td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 </div>
@@ -179,12 +226,11 @@ $page_title = "My Orders - Track Your Purchases";
     <script src="../JS/custom.js"></script>
 
     <script>
-        // PDF Print Button Functionality
-        document.querySelectorAll('.btn-print').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = this.getAttribute('href');
-                window.open(url, '_blank');
+        // View Details Button Functionality
+        $(document).ready(function() {
+            $('.view-details-btn').on('click', function() {
+                const orderId = $(this).data('order');
+                $('#details-' + orderId).slideToggle();
             });
         });
     </script>

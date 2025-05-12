@@ -99,13 +99,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     // Sender and recipient
                     $mail->setFrom('noreply@gg-lugx.com', 'GG-LUGX Contact Form');
-                    $mail->addAddress('admin@example.com', 'GG-LUGX Admin');
+                    $mail->addAddress('sekaletchio@gmail.com', 'GG-LUGX Admin');
 
                     // Set email subject with date and time
                     $mail->Subject = "Contact Form: $subject - $date_time";
 
                     // Build email message in HTML
-                    $mail->Body = "
+                    $mail->Body = "admin@example.com
                         <html>
                         <head>
                             <style>

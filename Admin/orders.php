@@ -1,11 +1,5 @@
 <?php
-// Place this at the top of your orders.php file in the admin panel
-
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
+session_start();
 require_once("../Setting/core.php");
 
 // Check if user is logged in and is admin
@@ -21,8 +15,8 @@ require_once("../Controllers/customer_controller.php");
 $cart_controller = new CartController();
 $customer_controller = new CustomerController();
 
-// Debug status updates - uncomment this when testing
-// error_log("Order status update handler running");
+// Debug status updates
+error_log("Order status update handler running");
 
 // Handle status update if submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_status'])) {
@@ -31,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_status'])) {
     $new_status = isset($_POST['new_status']) ? $_POST['new_status'] : '';
 
     // Debug information
-    // error_log("Update Status Form Submitted - Order ID: $order_id, New Status: $new_status");
+    error_log("Update Status Form Submitted - Order ID: $order_id, New Status: $new_status");
 
     // Validate inputs
     if ($order_id <= 0) {
@@ -75,7 +69,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_status'])) {
     header("Location: orders.php?tab=" . $current_tab);
     exit;
 }
-
 
 // Get all orders for admin
 $all_orders = $cart_controller->get_all_orders_admin_ctr();
@@ -401,9 +394,7 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                                 <span aria-hidden="true">&times;</span>
                                                             </button>
                                                         </div>
-
-                                                        <!-- Leave action empty to post to the current page -->
-                                                        <form action="" method="POST">
+                                                        <form method="POST">
                                                             <div class="modal-body">
                                                                 <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
 

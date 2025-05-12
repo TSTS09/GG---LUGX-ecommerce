@@ -17,30 +17,39 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $order_id = (int)$_GET['id'];
 $customer_id = $_SESSION['customer_id'];
 
-// Include order controller
-require_once("../Controllers/order_controller.php");
-$order_controller = new OrderController();
+// Include cart controller for better compatibility with order items
+require_once("../Controllers/cart_controller.php");
+require_once("../Controllers/customer_controller.php");
+$cart_controller = new CartController();
+$customer_controller = new CustomerController();
+
+// Get order details
+$order_details = $cart_controller->get_order_details_ctr($order_id);
 
 // Verify that the order belongs to this customer
-$order = $order_controller->get_order_details_ctr($order_id);
-
-if (!$order['success'] || empty($order['data']) || $order['data']['customer_id'] != $customer_id) {
+if (!$order_details['success'] || empty($order_details['data']) || $order_details['data']['customer_id'] != $customer_id) {
     header("Location: orders.php");
     exit;
 }
 
-// Get order details
-$order_data = $order['data'];
+// Get order data
+$order_data = $order_details['data'];
 
 // Get order items
-$order_items = $order_controller->get_order_items_ctr($order_id);
+$order_items = $cart_controller->get_order_items_ctr($order_id);
 
-// Get exchange rate from the order or from a default
-$exchange_rate = isset($_SESSION['exchange_rate']) ? $_SESSION['exchange_rate'] : 12.5;
+// Get payment info
+$payment_info = $cart_controller->get_payment_info_ctr($order_id);
+
+// Get customer info
+$customer = $customer_controller->get_one_customer_ctr($customer_id);
+
+// Get exchange rate from the payment info or use a default
+$exchange_rate = isset($payment_info['exchange_rate']) ? $payment_info['exchange_rate'] : 12.5;
 
 // Calculate GHS amount if available
 $usd_amount = $order_data['order_amount'];
-$ghs_amount = isset($_SESSION['ghs_amount']) ? $_SESSION['ghs_amount'] : ($usd_amount * $exchange_rate);
+$ghs_amount = isset($payment_info['ghs_amount']) ? $payment_info['ghs_amount'] : ($usd_amount * $exchange_rate);
 ?>
 
 <!DOCTYPE html>
@@ -85,14 +94,23 @@ $ghs_amount = isset($_SESSION['ghs_amount']) ? $_SESSION['ghs_amount'] : ($usd_a
             <div class="row">
                 <div class="col-sm-6">
                     <div class="invoice-details-title">Bill To</div>
-                    <div><strong>Name:</strong> <?php echo $_SESSION['customer_name']; ?></div>
-                    <div><strong>Email:</strong> <?php echo $_SESSION['customer_email']; ?></div>
+                    <?php if ($customer): ?>
+                        <div><strong>Name:</strong> <?php echo htmlspecialchars($customer['customer_name']); ?></div>
+                        <div><strong>Email:</strong> <?php echo htmlspecialchars($customer['customer_email']); ?></div>
+                        <div><strong>Contact:</strong> <?php echo htmlspecialchars($customer['customer_contact']); ?></div>
+                        <div><strong>Address:</strong> <?php echo htmlspecialchars($customer['customer_city'] . ', ' . $customer['customer_country']); ?></div>
+                    <?php else: ?>
+                        <div><strong>Customer ID:</strong> <?php echo $customer_id; ?></div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-sm-6 text-right">
                     <div class="invoice-details-title">Invoice Details</div>
                     <div><strong>Invoice Number:</strong> <?php echo $order_data['invoice_no']; ?></div>
                     <div><strong>Date:</strong> <?php echo date('F j, Y', strtotime($order_data['order_date'])); ?></div>
                     <div><strong>Status:</strong> <?php echo $order_data['order_status']; ?></div>
+                    <?php if (isset($order_data['reference']) && !empty($order_data['reference'])): ?>
+                        <div><strong>Reference:</strong> <?php echo $order_data['reference']; ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -129,6 +147,12 @@ $ghs_amount = isset($_SESSION['ghs_amount']) ? $_SESSION['ghs_amount'] : ($usd_a
                         </tr>
                 <?php
                     endforeach;
+                else:
+                ?>
+                    <tr>
+                        <td colspan="4">No items found for this order.</td>
+                    </tr>
+                <?php
                 endif;
                 ?>
                 <tr>
@@ -153,8 +177,13 @@ $ghs_amount = isset($_SESSION['ghs_amount']) ? $_SESSION['ghs_amount'] : ($usd_a
         <div class="row">
             <div class="col-12">
                 <div class="invoice-details-title">Payment Information</div>
-                <div><strong>Payment Method:</strong> <?php echo $order_data['payment_method'] ?? 'Online Payment'; ?></div>
-                <div><strong>Transaction ID:</strong> <?php echo $order_data['transaction_id'] ?? '-'; ?></div>
+                <?php if ($payment_info): ?>
+                    <div><strong>Payment Method:</strong> <?php echo $payment_info['payment_method'] ?? 'Online Payment'; ?></div>
+                    <div><strong>Transaction ID:</strong> <?php echo $payment_info['transaction_id'] ?? '-'; ?></div>
+                    <div><strong>Payment Date:</strong> <?php echo date('F j, Y', strtotime($payment_info['payment_date'])); ?></div>
+                <?php else: ?>
+                    <div><strong>Payment Method:</strong> Online Payment</div>
+                <?php endif; ?>
             </div>
         </div>
 
