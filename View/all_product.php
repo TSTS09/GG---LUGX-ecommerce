@@ -40,7 +40,8 @@ $search_term = isset($_GET['search']) ? $_GET['search'] : '';
 $category_filter = isset($_GET['category']) ? $_GET['category'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
 
-// Get products - using your existing controller methods without pagination parameters
+
+// Get products - using proper pagination instead of client-side pagination
 if (!empty($search_term)) {
     $products = $product_controller->search_products_ctr($search_term);
 } elseif (!empty($category_filter)) {
@@ -57,14 +58,19 @@ if (!empty($search_term)) {
             $products = $product_controller->get_products_by_category_ctr($category['cat_id']);
             $category_name = $category_filter;
         } else {
-            $products = $product_controller->get_all_products_ctr();
+            // If we need all products with server-side pagination:
+            $products = $product_controller->get_all_products_ctr('', $limit, $current_page);
             $category_name = 'All Products';
         }
     }
 } else {
-    $products = $product_controller->get_all_products_ctr();
+    // Use server-side pagination with proper limit and page parameters
+    $products = $product_controller->get_all_products_ctr('', $limit, $current_page);
     $category_name = 'All Products';
 }
+
+// No need for client-side pagination since we're using server-side pagination
+$paginated_products = $products;
 
 // Get all categories for filtering
 $all_categories = $product_controller->get_all_categories_ctr();

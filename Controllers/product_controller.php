@@ -261,6 +261,7 @@ class ProductController
             return false;
         }
     }
+
     /**
      * Get all products with pagination and search support
      * @param string $search - Search term (optional)
@@ -272,17 +273,17 @@ class ProductController
     {
         try {
             // Validate and sanitize inputs
-            $limit = in_array((int)$limit, [10, 12, 24, 25, 48, 50, 100]) ? (int)$limit : 10;
+            $limit = in_array((int)$limit, [10, 25, 50, 100]) ? (int)$limit : 10;
             $page = (int)$page > 0 ? (int)$page : 1;
 
             // Calculate offset
             $offset = ($page - 1) * $limit;
 
-            // Get products with limit and offset
-            $products = $this->productClass->get_all_products($search, $limit, $offset);
-
             // Get total count for pagination
             $total_count = $this->productClass->get_products_count($search);
+
+            // Get products with limit and offset
+            $products = $this->productClass->get_all_products($search, $limit, $offset);
 
             return [
                 'success' => true,

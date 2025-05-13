@@ -1,4 +1,13 @@
 <?php
+
+// Add debugging code
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Log some debug info
+$debug_file = "../Error/product_debug.log";
+file_put_contents($debug_file, "Starting product.php debug\n", FILE_APPEND);
+
 session_start();
 require_once("../Setting/core.php");
 

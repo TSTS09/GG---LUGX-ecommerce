@@ -930,19 +930,21 @@ class ProductClass extends db_connection
             return false;
         }
     }
+    // Update this method in your Classes/product_class.php file
+
     /**
-     * Get all products with optional search and pagination
-     * @param string $search - Search term (optional)
-     * @param int $limit - Maximum number of products to return (optional)
-     * @param int $offset - Pagination offset (optional)
+     * Get all products with proper pagination
+     * @param string $search - Optional search term
+     * @param int $limit - Optional result limit
+     * @param int $offset - Optional result offset for pagination
      * @return array - Array of products
      */
-    public function get_all_products($search = '', $limit = 0, $offset = 0)
+    function get_all_products($search = '', $limit = 0, $offset = 0)
     {
         try {
             $conn = $this->db_conn();
 
-            // Base query - FIXED: Removed product_status filter that was causing no products to display
+            // Base query with NO product_status filter
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
                FROM products p 
                LEFT JOIN categories c ON p.product_cat = c.cat_id 
@@ -967,13 +969,14 @@ class ProductClass extends db_connection
 
             // Add limit and offset if specified
             if ($limit > 0) {
-                $sql .= " LIMIT ?";
-                $params[] = $limit;
-                $types .= "i";
-
                 if ($offset > 0) {
-                    $sql .= " OFFSET ?";
+                    $sql .= " LIMIT ? OFFSET ?";
+                    $params[] = $limit;
                     $params[] = $offset;
+                    $types .= "ii";
+                } else {
+                    $sql .= " LIMIT ?";
+                    $params[] = $limit;
                     $types .= "i";
                 }
             }
