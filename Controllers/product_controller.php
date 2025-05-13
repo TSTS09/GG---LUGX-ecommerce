@@ -124,35 +124,6 @@ class ProductController
         }
     }
 
-    public function get_all_products_ctr($search = '', $entries = 10)
-    {
-        try {
-            // Safety check for authentication
-            if (!isset($_SESSION['user_id']) && !isset($_SESSION['customer_id'])) {
-                return [
-                    'success' => false,
-                    'message' => 'Authentication required',
-                    'data' => []
-                ];
-            }
-
-            $entries = in_array((int)$entries, [10, 25, 50, 100]) ? (int)$entries : 10;
-
-            $products = $this->productClass->get_all_products($search, $entries);
-
-            return [
-                'success' => true,
-                'data' => $products
-            ];
-        } catch (Exception $e) {
-            error_log("Error in get_all_products_ctr: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => []
-            ];
-        }
-    }
 
     public function get_one_product_ctr($product_id)
     {
@@ -167,16 +138,6 @@ class ProductController
     public function delete_product_ctr($product_id)
     {
         return $this->productClass->delete_product($product_id);
-    }
-
-    /**
-     * Soft delete a product
-     * @param int $product_id - The product ID
-     * @return bool - True if successful, false otherwise
-     */
-    public function soft_delete_product_ctr($product_id)
-    {
-        return $this->productClass->soft_delete_product($product_id);
     }
 
     public function get_products_by_category_ctr($cat_id, $limit = 0)
@@ -300,5 +261,44 @@ class ProductController
             return false;
         }
     }
+    /**
+     * Get all products with pagination and search support
+     * @param string $search - Search term (optional)
+     * @param int $limit - Items per page (default: 10)
+     * @param int $page - Current page (default: 1)
+     * @return array - Array of products with pagination info
+     */
+    public function get_all_products_ctr($search = '', $limit = 10, $page = 1)
+    {
+        try {
+            // Validate and sanitize inputs
+            $limit = in_array((int)$limit, [10, 25, 50, 100]) ? (int)$limit : 10;
+            $page = (int)$page > 0 ? (int)$page : 1;
 
+            // Calculate offset
+            $offset = ($page - 1) * $limit;
+
+            // Get products with limit and offset
+            $products = $this->productClass->get_all_products($search, $limit, $offset);
+
+            // Get total count for pagination
+            $total_count = $this->productClass->get_products_count($search);
+
+            return [
+                'success' => true,
+                'data' => $products,
+                'total_count' => $total_count,
+                'page' => $page,
+                'limit' => $limit,
+                'total_pages' => ceil($total_count / $limit)
+            ];
+        } catch (Exception $e) {
+            error_log("Error in get_all_products_ctr: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
 }

@@ -1687,3 +1687,71 @@ body {
   font-weight: 600;
   margin-right: 15px;
 }
+
+/* Image consistency styles */
+
+/* Featured products on index page */
+.featured-item {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.featured-item img {
+  width: 100%;
+  height: 250px; /* Fixed height for consistency */
+  object-fit: cover; /* Maintain aspect ratio and cover container */
+  border-radius: 10px;
+  transition: transform 0.3s;
+}
+
+.featured-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Product card modifications */
+.trending .item img {
+  width: 100%;
+  height: 220px; /* Fixed height */
+  object-fit: cover;
+  border-radius: 23px;
+}
+
+/* Make product images consistent on all product pages */
+.product-card .product-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Admin product table thumbnails */
+.product-table img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* Single product page */
+.single-product-image {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+/* Related products */
+.related-product-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* All products page */
+.all-products .product-image {
+  height: 200px;
+  object-fit: cover;
+}

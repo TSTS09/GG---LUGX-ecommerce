@@ -1,0 +1,100 @@
+
+        .product-container {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 100px auto;
+        }
+
+        .product-card {
+            margin-bottom: 30px;
+            transition: transform 0.3s;
+            height: 100%;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-image {
+            height: 200px;
+            object-fit: cover;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .product-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+            height: 50px;
+            overflow: hidden;
+        }
+
+        .product-category {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .product-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ee626b;
+        }
+
+        .btn-add-to-cart {
+            background-color: #ee626b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 25px;
+            transition: all 0.3s;
+        }
+
+        .btn-add-to-cart:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .search-bar {
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            border-radius: 25px;
+            padding-left: 20px;
+        }
+
+        .btn-search {
+            background-color: #ee626b;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+
+        .category-filters {
+            margin-bottom: 30px;
+        }
+
+        .category-badge {
+            background-color: #f8f9fa;
+            color: #333;
+            padding: 5px 15px;
+            border-radius: 25px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .category-badge:hover {
+            background-color: #ee626b;
+            color: white;
+        }
+
+        .active-filter {
+            background-color: #ee626b;
+            color: white;
+        }
+    
