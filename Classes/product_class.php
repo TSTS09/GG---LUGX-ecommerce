@@ -931,6 +931,81 @@ class ProductClass extends db_connection
         }
     }
     /**
+     * Get all products with optional search and pagination
+     * @param string $search - Search term (optional)
+     * @param int $limit - Maximum number of products to return (optional)
+     * @param int $offset - Pagination offset (optional)
+     * @return array - Array of products
+     */
+    public function get_all_products($search = '', $limit = 0, $offset = 0)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Base query - FIXED: Removed product_status filter that was causing no products to display
+            $sql = "SELECT p.*, c.cat_name, b.brand_name 
+               FROM products p 
+               LEFT JOIN categories c ON p.product_cat = c.cat_id 
+               LEFT JOIN brands b ON p.product_brand = b.brand_id";
+
+            $params = [];
+            $types = "";
+
+            // Add search condition if search term exists
+            if (!empty($search)) {
+                $search = mysqli_real_escape_string($conn, $search);
+                $sql .= " WHERE (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
+                $search_param = "%$search%";
+                $params[] = $search_param;
+                $params[] = $search_param;
+                $params[] = $search_param;
+                $types .= "sss";
+            }
+
+            // Add ordering
+            $sql .= " ORDER BY p.product_id DESC";
+
+            // Add limit and offset if specified
+            if ($limit > 0) {
+                $sql .= " LIMIT ?";
+                $params[] = $limit;
+                $types .= "i";
+
+                if ($offset > 0) {
+                    $sql .= " OFFSET ?";
+                    $params[] = $offset;
+                    $types .= "i";
+                }
+            }
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            if (!empty($params)) {
+                $stmt->bind_param($types, ...$params);
+            }
+
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $products = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+
+            return $products;
+        } catch (Exception $e) {
+            error_log("Error fetching products: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Get total count of products for pagination
      * @param string $search - Optional search term
      * @return int - Total number of products
@@ -940,10 +1015,8 @@ class ProductClass extends db_connection
         try {
             $conn = $this->db_conn();
 
-            // Base query - count only active products
-            $sql = "SELECT COUNT(*) as total 
-               FROM products p 
-               WHERE p.product_status = 'active' OR p.product_status IS NULL";
+            // FIXED: Removed product_status filter that was causing count to be 0
+            $sql = "SELECT COUNT(*) as total FROM products p";
 
             $params = [];
             $types = "";
@@ -951,7 +1024,7 @@ class ProductClass extends db_connection
             // Add search condition if search term exists
             if (!empty($search)) {
                 $search = mysqli_real_escape_string($conn, $search);
-                $sql .= " AND (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
+                $sql .= " WHERE (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
                 $search_param = "%$search%";
                 $params[] = $search_param;
                 $params[] = $search_param;
@@ -979,74 +1052,6 @@ class ProductClass extends db_connection
         } catch (Exception $e) {
             error_log("Error getting product count: " . $e->getMessage());
             return 0;
-        }
-    }
-
-    /**
-     * Get all products
-     * @param string $search - Optional search term
-     * @param int $limit - Optional result limit
-     * @return array - Array of products
-     */
-    public function get_all_products($search = '', $limit = 0)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            // FIXED: Removed the product_status filter that was causing no products to display
-            $sql = "SELECT p.*, c.cat_name, b.brand_name 
-               FROM products p 
-               LEFT JOIN categories c ON p.product_cat = c.cat_id 
-               LEFT JOIN brands b ON p.product_brand = b.brand_id";
-
-            $params = [];
-            $types = "";
-
-            // Add search condition if search term exists
-            if (!empty($search)) {
-                $search = mysqli_real_escape_string($conn, $search);
-                $sql .= " WHERE (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
-                $search_param = "%$search%";
-                $params[] = $search_param;
-                $params[] = $search_param;
-                $params[] = $search_param;
-                $types .= "sss";
-            }
-
-            // Add ordering
-            $sql .= " ORDER BY p.product_id DESC";
-
-            // Add limit if specified
-            if ($limit > 0) {
-                $sql .= " LIMIT ?";
-                $params[] = $limit;
-                $types .= "i";
-            }
-
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            if (!empty($params)) {
-                $stmt->bind_param($types, ...$params);
-            }
-
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $products = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-
-            return $products;
-        } catch (Exception $e) {
-            error_log("Error fetching products: " . $e->getMessage());
-            return [];
         }
     }
 }

@@ -272,7 +272,7 @@ class ProductController
     {
         try {
             // Validate and sanitize inputs
-            $limit = in_array((int)$limit, [10, 25, 50, 100]) ? (int)$limit : 10;
+            $limit = in_array((int)$limit, [10, 12, 24, 25, 48, 50, 100]) ? (int)$limit : 10;
             $page = (int)$page > 0 ? (int)$page : 1;
 
             // Calculate offset
