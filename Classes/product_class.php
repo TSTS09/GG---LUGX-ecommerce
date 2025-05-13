@@ -459,36 +459,27 @@ class ProductClass extends db_connection
 
             error_log("ProductClass: Preparing to insert - Cat: $product_cat, Brand: $product_brand, Title: $product_title, Price: $product_price, Image: $product_image");
 
-            // Try a direct query first for testing, skipping prepared statement
-            $direct_sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords) 
-                VALUES ({$product_cat}, {$product_brand}, '{$product_title}', {$product_price}, '{$product_desc}', '{$product_image}', '{$product_keywords}')";
-            error_log("ProductClass: Testing direct query: " . $direct_sql);
+            // Set product as active by default
+            $product_status = 'active';
 
-            $direct_result = mysqli_query($conn, $direct_sql);
-            if (!$direct_result) {
-                error_log("ProductClass: Direct query failed: " . mysqli_error($conn));
+            // Use prepared statement for better security
+            $sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords, product_status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-                // Try to diagnose the issue more
-                if (strpos(mysqli_error($conn), 'foreign key constraint') !== false) {
-                    error_log("ProductClass: Foreign key constraint failure - checking if category and brand exist");
-
-                    // Check if category exists
-                    $cat_check = mysqli_query($conn, "SELECT cat_id FROM categories WHERE cat_id = $product_cat");
-                    if (mysqli_num_rows($cat_check) == 0) {
-                        error_log("ProductClass: Category with ID $product_cat does not exist");
-                    }
-
-                    // Check if brand exists
-                    $brand_check = mysqli_query($conn, "SELECT brand_id FROM brands WHERE brand_id = $product_brand");
-                    if (mysqli_num_rows($brand_check) == 0) {
-                        error_log("ProductClass: Brand with ID $product_brand does not exist");
-                    }
-                }
-
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                error_log("ProductClass: Prepare statement failed: " . $conn->error);
                 return false;
             }
 
-            $insert_id = mysqli_insert_id($conn);
+            $stmt->bind_param("iisdssss", $product_cat, $product_brand, $product_title, $product_price, $product_desc, $product_image, $product_keywords, $product_status);
+
+            if (!$stmt->execute()) {
+                error_log("ProductClass: Execute statement failed: " . $stmt->error);
+                return false;
+            }
+
+            $insert_id = $stmt->insert_id;
             error_log("ProductClass: Product inserted successfully with ID: $insert_id");
             return true;
         } catch (Exception $e) {
@@ -498,7 +489,7 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Get all products
+     * Get all products that are active
      * @param string $search - Optional search term
      * @param int $limit - Optional result limit
      * @return array - Array of products
@@ -508,12 +499,12 @@ class ProductClass extends db_connection
         try {
             $conn = $this->db_conn();
 
-            // Base query 
+            // Base query - only get active products
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-       FROM products p 
-       LEFT JOIN categories c ON p.product_cat = c.cat_id 
-       LEFT JOIN brands b ON p.product_brand = b.brand_id
-       WHERE p.product_status = 'active' OR p.product_status IS NULL";
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id
+                   WHERE p.product_status = 'active' OR p.product_status IS NULL";
 
             $params = [];
             $types = "";
@@ -521,7 +512,7 @@ class ProductClass extends db_connection
             // Add search condition if search term exists
             if (!empty($search)) {
                 $search = mysqli_real_escape_string($conn, $search);
-                $sql .= " WHERE p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?";
+                $sql .= " AND (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
                 $search_param = "%$search%";
                 $params[] = $search_param;
                 $params[] = $search_param;
@@ -635,7 +626,8 @@ class ProductClass extends db_connection
                         product_price = ?, 
                         product_desc = ?, 
                         product_image = ?, 
-                        product_keywords = ? 
+                        product_keywords = ?,
+                        product_status = 'active'
                         WHERE product_id = ?";
 
                 $stmt = $conn->prepare($sql);
@@ -651,7 +643,8 @@ class ProductClass extends db_connection
                         product_title = ?, 
                         product_price = ?, 
                         product_desc = ?, 
-                        product_keywords = ? 
+                        product_keywords = ?,
+                        product_status = 'active'
                         WHERE product_id = ?";
 
                 $stmt = $conn->prepare($sql);
@@ -674,7 +667,7 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Delete a product
+     * Delete a product (Hard delete - use soft_delete_product instead)
      * @param int $product_id - The product ID
      * @return bool - True if successful, false otherwise
      */
@@ -711,8 +704,8 @@ class ProductClass extends db_connection
             }
 
             // Delete product image file if it exists
-            if ($product && $product['product_image']) {
-                $image_path = "../Images/product_images/" . $product['product_image'];
+            if ($product && $product['product_image'] && $product['product_image'] != '../Images/product/default.jpg') {
+                $image_path = $product['product_image'];
                 if (file_exists($image_path)) {
                     unlink($image_path);
                 }
@@ -726,7 +719,36 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Get products by category
+     * Soft delete a product by setting its status to 'deleted'
+     * @param int $product_id - The product ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function soft_delete_product($product_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Update product status to 'deleted' instead of actually deleting it
+            $sql = "UPDATE products SET product_status = 'deleted' WHERE product_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $product_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            return $stmt->affected_rows > 0;
+        } catch (Exception $e) {
+            error_log("Error soft deleting product: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get products by category - only active products
      * @param int $cat_id - Category ID
      * @param int $limit - Optional result limit
      * @return array - Array of products
@@ -740,7 +762,7 @@ class ProductClass extends db_connection
                    FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_cat = ? AND (p.product_status = 'active' OR p.product_status IS NULL);
+                   WHERE p.product_cat = ? AND (p.product_status = 'active' OR p.product_status IS NULL)";
 
             // Add ordering
             $sql .= " ORDER BY p.product_id DESC";
@@ -778,7 +800,7 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Get products by brand
+     * Get products by brand - only active products
      * @param int $brand_id - Brand ID
      * @param int $limit - Optional result limit
      * @return array - Array of products
@@ -792,7 +814,7 @@ class ProductClass extends db_connection
                    FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_brand = ?";
+                   WHERE p.product_brand = ? AND (p.product_status = 'active' OR p.product_status IS NULL)";
 
             // Add ordering
             $sql .= " ORDER BY p.product_id DESC";
@@ -830,7 +852,7 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Search products
+     * Search products - only active products
      * @param string $search_term - Search term
      * @return array - Array of products matching search
      */
@@ -846,9 +868,10 @@ class ProductClass extends db_connection
                    FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_title LIKE ? 
+                   WHERE (p.product_title LIKE ? 
                    OR p.product_keywords LIKE ? 
-                   OR p.product_desc LIKE ?
+                   OR p.product_desc LIKE ?)
+                   AND (p.product_status = 'active' OR p.product_status IS NULL)
                    ORDER BY p.product_id DESC";
 
             $stmt = $conn->prepare($sql);
@@ -876,7 +899,7 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Get featured products (newest products)
+     * Get featured products - only active products
      * @param int $limit - Number of products to return
      * @return array - Array of featured products
      */
@@ -889,6 +912,7 @@ class ProductClass extends db_connection
                    FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
+                   WHERE p.product_status = 'active' OR p.product_status IS NULL
                    ORDER BY p.product_id DESC 
                    LIMIT ?";
 
@@ -917,7 +941,7 @@ class ProductClass extends db_connection
     }
 
     /**
-     * Get bestselling products based on order data
+     * Get bestselling products based on order data - only active products
      * @param int $limit - Number of products to return
      * @return array - Array of bestselling products
      */
@@ -933,6 +957,7 @@ class ProductClass extends db_connection
                LEFT JOIN categories c ON p.product_cat = c.cat_id 
                LEFT JOIN brands b ON p.product_brand = b.brand_id
                LEFT JOIN orderdetails od ON p.product_id = od.product_id
+               WHERE p.product_status = 'active' OR p.product_status IS NULL
                GROUP BY p.product_id
                ORDER BY total_sold DESC
                LIMIT ?";
@@ -995,34 +1020,6 @@ class ProductClass extends db_connection
             return $result->fetch_assoc();
         } catch (Exception $e) {
             error_log("Error getting category by name: " . $e->getMessage());
-            return false;
-        }
-    }
-    /**
-     * Soft delete a product by setting its status to 'deleted'
-     * @param int $product_id - The product ID
-     * @return bool - True if successful, false otherwise
-     */
-    public function soft_delete_product($product_id)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            // Update product status to 'deleted' instead of actually deleting it
-            $sql = "UPDATE products SET product_status = 'deleted' WHERE product_id = ?";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $product_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            return $stmt->affected_rows > 0;
-        } catch (Exception $e) {
-            error_log("Error soft deleting product: " . $e->getMessage());
             return false;
         }
     }
