@@ -508,11 +508,12 @@ class ProductClass extends db_connection
         try {
             $conn = $this->db_conn();
 
-            // Base query
+            // Base query 
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM products p 
-                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
-                   LEFT JOIN brands b ON p.product_brand = b.brand_id";
+       FROM products p 
+       LEFT JOIN categories c ON p.product_cat = c.cat_id 
+       LEFT JOIN brands b ON p.product_brand = b.brand_id
+       WHERE p.product_status = 'active' OR p.product_status IS NULL";
 
             $params = [];
             $types = "";
@@ -739,7 +740,7 @@ class ProductClass extends db_connection
                    FROM products p 
                    LEFT JOIN categories c ON p.product_cat = c.cat_id 
                    LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_cat = ?";
+                   WHERE p.product_cat = ? AND (p.product_status = 'active' OR p.product_status IS NULL);
 
             // Add ordering
             $sql .= " ORDER BY p.product_id DESC";
@@ -994,6 +995,34 @@ class ProductClass extends db_connection
             return $result->fetch_assoc();
         } catch (Exception $e) {
             error_log("Error getting category by name: " . $e->getMessage());
+            return false;
+        }
+    }
+    /**
+     * Soft delete a product by setting its status to 'deleted'
+     * @param int $product_id - The product ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function soft_delete_product($product_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Update product status to 'deleted' instead of actually deleting it
+            $sql = "UPDATE products SET product_status = 'deleted' WHERE product_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $product_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            return $stmt->affected_rows > 0;
+        } catch (Exception $e) {
+            error_log("Error soft deleting product: " . $e->getMessage());
             return false;
         }
     }

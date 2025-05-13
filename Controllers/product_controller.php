@@ -169,6 +169,16 @@ class ProductController
         return $this->productClass->delete_product($product_id);
     }
 
+    /**
+     * Soft delete a product
+     * @param int $product_id - The product ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function soft_delete_product_ctr($product_id)
+    {
+        return $this->productClass->soft_delete_product($product_id);
+    }
+
     public function get_products_by_category_ctr($cat_id, $limit = 0)
     {
         try {
@@ -290,4 +300,5 @@ class ProductController
             return false;
         }
     }
+
 }

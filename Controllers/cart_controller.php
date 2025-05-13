@@ -269,6 +269,20 @@ class CartController
     }
 
     /**
+     * Get payment information for an order
+     * @param int $order_id - Order ID
+     * @return array|null - Payment information or null if not found
+     */
+    public function get_payment_info_ctr($order_id)
+    {
+        try {
+            return $this->cartClass->get_payment_info($order_id);
+        } catch (Exception $e) {
+            error_log("Error in get_payment_info_ctr: " . $e->getMessage());
+            return null;
+        }
+    }
+    /**
      * Update order status
      * @param int $order_id - Order ID
      * @param string $status - New status
@@ -281,21 +295,6 @@ class CartController
         } catch (Exception $e) {
             error_log("Error in update_order_status_ctr: " . $e->getMessage());
             return false;
-        }
-    }
-
-    /**
-     * Get payment information for an order
-     * @param int $order_id - Order ID
-     * @return array|null - Payment information or null if not found
-     */
-    public function get_payment_info_ctr($order_id)
-    {
-        try {
-            return $this->cartClass->get_payment_info($order_id);
-        } catch (Exception $e) {
-            error_log("Error in get_payment_info_ctr: " . $e->getMessage());
-            return null;
         }
     }
 }

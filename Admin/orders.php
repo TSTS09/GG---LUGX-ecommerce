@@ -280,8 +280,9 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#statusModal<?php echo $order['order_id']; ?>">
-                                                        Update Status
+                                                    <button type="button" class="btn btn-sm btn-primary"
+                                                        onclick="openStatusModal(<?php echo $order['order_id']; ?>, '<?php echo $order['order_status']; ?>')">
+                                                        <i class="fa fa-pencil"></i> Update Status
                                                     </button>
                                                     <button class="btn btn-sm btn-info btn-view-details" data-order-id="<?php echo $order['order_id']; ?>">
                                                         View Details
@@ -385,35 +386,36 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                             </tr>
 
                                             <!-- Update Status Modal -->
-                                            <div class="modal fade" id="statusModal<?php echo $order['order_id']; ?>" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel<?php echo $order['order_id']; ?>" aria-hidden="true">
+                                            <!-- Order Status Update Modal -->
+                                            <div class="modal fade" id="updateStatusModal" tabindex="-1" role="dialog" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title" id="statusModalLabel<?php echo $order['order_id']; ?>">Update Order Status</h5>
+                                                            <h5 class="modal-title" id="updateStatusModalLabel">Update Order Status</h5>
                                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                                 <span aria-hidden="true">&times;</span>
                                                             </button>
                                                         </div>
-                                                        <form method="POST">
+                                                        <form action="../Actions/update_order_status.php" method="POST">
                                                             <div class="modal-body">
-                                                                <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
+                                                                <input type="hidden" id="orderIdInput" name="order_id" value="">
 
                                                                 <div class="form-group">
-                                                                    <label for="new_status<?php echo $order['order_id']; ?>">Current Status: <span class="order-status <?php echo $status_class; ?>"><?php echo $order['order_status']; ?></span></label>
-                                                                    <select class="form-control" id="new_status<?php echo $order['order_id']; ?>" name="new_status" required>
-                                                                        <option value="">Select New Status</option>
-                                                                        <option value="Pending" <?php echo $order['order_status'] === 'Pending' ? 'selected' : ''; ?>>Pending</option>
-                                                                        <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                                                                        <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
-                                                                        <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
-                                                                        <option value="Completed" <?php echo $order['order_status'] === 'Completed' ? 'selected' : ''; ?>>Completed</option>
-                                                                        <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                                                    <label for="orderStatusSelect">Select New Status</label>
+                                                                    <select class="form-control" id="orderStatusSelect" name="order_status" required>
+                                                                        <option value="">Choose Status...</option>
+                                                                        <option value="Pending">Pending</option>
+                                                                        <option value="Processing">Processing</option>
+                                                                        <option value="Shipped">Shipped</option>
+                                                                        <option value="Delivered">Delivered</option>
+                                                                        <option value="Completed">Completed</option>
+                                                                        <option value="Cancelled">Cancelled</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                                                <button type="submit" name="update_status" class="btn btn-primary">Update Status</button>
+                                                                <button type="submit" class="btn btn-primary">Update Status</button>
                                                             </div>
                                                         </form>
                                                     </div>
@@ -455,6 +457,23 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                 $('#orderDetails' + orderId).toggle();
             });
         });
+        // Function to open the status update modal with the correct order ID
+        function openStatusModal(orderId, currentStatus) {
+            // Set the order ID in the hidden input
+            document.getElementById('orderIdInput').value = orderId;
+
+            // Set the current status as selected in the dropdown
+            const statusSelect = document.getElementById('orderStatusSelect');
+            for (let i = 0; i < statusSelect.options.length; i++) {
+                if (statusSelect.options[i].value === currentStatus) {
+                    statusSelect.selectedIndex = i;
+                    break;
+                }
+            }
+
+            // Open the modal
+            $('#updateStatusModal').modal('show');
+        }
     </script>
 </body>
 

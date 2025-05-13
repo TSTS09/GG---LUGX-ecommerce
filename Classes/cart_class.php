@@ -626,6 +626,36 @@ class CartClass extends db_connection
     }
 
     /**
+     * Get payment information for an order
+     * @param int $order_id - Order ID
+     * @return array|null - Payment information or null if not found
+     */
+    public function get_payment_info($order_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT * FROM payment WHERE order_id = ? LIMIT 1";
+            $stmt = $conn->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $order_id);
+
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            return $result->fetch_assoc();
+        } catch (Exception $e) {
+            error_log("Error getting payment info: " . $e->getMessage());
+            return null;
+        }
+    }
+    /**
      * Update order status
      * @param int $order_id - Order ID
      * @param string $status - New status
@@ -659,37 +689,6 @@ class CartClass extends db_connection
         } catch (Exception $e) {
             error_log("Error updating order status: " . $e->getMessage());
             return false;
-        }
-    }
-
-    /**
-     * Get payment information for an order
-     * @param int $order_id - Order ID
-     * @return array|null - Payment information or null if not found
-     */
-    public function get_payment_info($order_id)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $sql = "SELECT * FROM payment WHERE order_id = ? LIMIT 1";
-            $stmt = $conn->prepare($sql);
-
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $order_id);
-
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            return $result->fetch_assoc();
-        } catch (Exception $e) {
-            error_log("Error getting payment info: " . $e->getMessage());
-            return null;
         }
     }
 }

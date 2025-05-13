@@ -16,18 +16,10 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
     // Create controller instance
     $product_controller = new ProductController();
     
-    // Get product info to delete image file
-    $product = $product_controller->get_one_product_ctr($product_id);
-    
-    // Delete product
-    $result = $product_controller->delete_product_ctr($product_id);
+    // Soft delete product (instead of hard delete)
+    $result = $product_controller->soft_delete_product_ctr($product_id);
     
     if ($result) {
-        // Delete product image if it exists and is not the default
-        if ($product && !empty($product['product_image']) && $product['product_image'] != '../Images/product/default.jpg' && file_exists($product['product_image'])) {
-            unlink($product['product_image']);
-        }
-        
         // Redirect back to product management page with success message
         $_SESSION['message'] = [
             'type' => 'success',
@@ -51,4 +43,3 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
 // Redirect back to product management page
 header("Location: ../Admin/product.php");
 exit;
-?>
