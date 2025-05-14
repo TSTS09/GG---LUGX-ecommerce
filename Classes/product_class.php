@@ -930,21 +930,28 @@ class ProductClass extends db_connection
             return false;
         }
     }
-    // Update this method in your Classes/product_class.php file
+
 
     /**
-     * Get all products with proper pagination
+     * Get all products
      * @param string $search - Optional search term
      * @param int $limit - Optional result limit
-     * @param int $offset - Optional result offset for pagination
+     * @param int $offset - Optional offset for pagination
      * @return array - Array of products
      */
     function get_all_products($search = '', $limit = 0, $offset = 0)
     {
+        // Debug output - write to a log file for debugging
+        $debug_log = __DIR__ . '/product_debug.log';
+        file_put_contents($debug_log, "get_all_products called with: search='$search', limit=$limit, offset=$offset\n", FILE_APPEND);
+
         try {
             $conn = $this->db_conn();
 
-            // Base query with NO product_status filter
+            // Log connection status
+            file_put_contents($debug_log, "Database connection: " . ($conn ? "Successful" : "Failed") . "\n", FILE_APPEND);
+
+            // SIMPLIFIED QUERY - Just get all products with no filters except search
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
                FROM products p 
                LEFT JOIN categories c ON p.product_cat = c.cat_id 
@@ -967,35 +974,46 @@ class ProductClass extends db_connection
             // Add ordering
             $sql .= " ORDER BY p.product_id DESC";
 
+            // Create a copy of the SQL for counting total results
+            $count_sql = $sql;
+
             // Add limit and offset if specified
             if ($limit > 0) {
+                $sql .= " LIMIT ?";
+                $params[] = $limit;
+                $types .= "i";
+
                 if ($offset > 0) {
-                    $sql .= " LIMIT ? OFFSET ?";
-                    $params[] = $limit;
+                    $sql .= " OFFSET ?";
                     $params[] = $offset;
-                    $types .= "ii";
-                } else {
-                    $sql .= " LIMIT ?";
-                    $params[] = $limit;
                     $types .= "i";
                 }
             }
 
+            // Log the SQL query
+            file_put_contents($debug_log, "SQL Query: $sql\n", FILE_APPEND);
+
+            // Execute the query
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
+                file_put_contents($debug_log, "Prepare statement failed: " . $conn->error . "\n", FILE_APPEND);
                 throw new Exception("Prepare statement failed: " . $conn->error);
             }
 
             if (!empty($params)) {
+                file_put_contents($debug_log, "Binding parameters: types=$types, params=" . implode(",", $params) . "\n", FILE_APPEND);
                 $stmt->bind_param($types, ...$params);
             }
 
             if (!$stmt->execute()) {
+                file_put_contents($debug_log, "Execute statement failed: " . $stmt->error . "\n", FILE_APPEND);
                 throw new Exception("Execute statement failed: " . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $products = [];
+
+            file_put_contents($debug_log, "Result rows: " . $result->num_rows . "\n", FILE_APPEND);
 
             while ($row = $result->fetch_assoc()) {
                 $products[] = $row;
@@ -1003,6 +1021,7 @@ class ProductClass extends db_connection
 
             return $products;
         } catch (Exception $e) {
+            file_put_contents($debug_log, "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
             error_log("Error fetching products: " . $e->getMessage());
             return [];
         }
@@ -1013,46 +1032,54 @@ class ProductClass extends db_connection
      * @param string $search - Optional search term
      * @return int - Total number of products
      */
-    public function get_products_count($search = '')
+    function get_products_count($search = '')
     {
+        // Debug output
+        $debug_log = __DIR__ . '/product_debug.log';
+        file_put_contents($debug_log, "get_products_count called with: search='$search'\n", FILE_APPEND);
+
         try {
             $conn = $this->db_conn();
 
-            // FIXED: Removed product_status filter that was causing count to be 0
-            $sql = "SELECT COUNT(*) as total FROM products p";
+            // EXTREMELY SIMPLIFIED QUERY - Just count all products with no filters except search
+            $sql = "SELECT COUNT(*) as total FROM products";
 
-            $params = [];
-            $types = "";
-
-            // Add search condition if search term exists
             if (!empty($search)) {
                 $search = mysqli_real_escape_string($conn, $search);
-                $sql .= " WHERE (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
+                $sql .= " WHERE (product_title LIKE ? OR product_keywords LIKE ? OR product_desc LIKE ?)";
                 $search_param = "%$search%";
-                $params[] = $search_param;
-                $params[] = $search_param;
-                $params[] = $search_param;
-                $types .= "sss";
+
+                $stmt = $conn->prepare($sql);
+                if (!$stmt) {
+                    file_put_contents($debug_log, "Prepare statement failed: " . $conn->error . "\n", FILE_APPEND);
+                    throw new Exception("Prepare statement failed: " . $conn->error);
+                }
+
+                $stmt->bind_param("sss", $search_param, $search_param, $search_param);
+            } else {
+                // No search parameters
+                $stmt = $conn->prepare($sql);
+                if (!$stmt) {
+                    file_put_contents($debug_log, "Prepare statement failed: " . $conn->error . "\n", FILE_APPEND);
+                    throw new Exception("Prepare statement failed: " . $conn->error);
+                }
             }
 
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            if (!empty($params)) {
-                $stmt->bind_param($types, ...$params);
-            }
+            file_put_contents($debug_log, "Count SQL Query: $sql\n", FILE_APPEND);
 
             if (!$stmt->execute()) {
+                file_put_contents($debug_log, "Execute statement failed: " . $stmt->error . "\n", FILE_APPEND);
                 throw new Exception("Execute statement failed: " . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
 
+            file_put_contents($debug_log, "Total count: " . ($row['total'] ?? 0) . "\n", FILE_APPEND);
+
             return $row['total'] ?? 0;
         } catch (Exception $e) {
+            file_put_contents($debug_log, "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
             error_log("Error getting product count: " . $e->getMessage());
             return 0;
         }

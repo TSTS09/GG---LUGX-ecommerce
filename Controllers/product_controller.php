@@ -263,7 +263,7 @@ class ProductController
     }
 
     /**
-     * Get all products with pagination and search support
+     * Get all products with pagination support
      * @param string $search - Search term (optional)
      * @param int $limit - Items per page (default: 10)
      * @param int $page - Current page (default: 1)
@@ -271,19 +271,31 @@ class ProductController
      */
     public function get_all_products_ctr($search = '', $limit = 10, $page = 1)
     {
+        // Debug output
+        $debug_log = __DIR__ . '/controller_debug.log';
+        file_put_contents($debug_log, "get_all_products_ctr called with: search='$search', limit=$limit, page=$page\n", FILE_APPEND);
+
         try {
-            // Validate and sanitize inputs
-            $limit = in_array((int)$limit, [10, 25, 50, 100]) ? (int)$limit : 10;
+            // Validate inputs
+            $limit = (int)$limit > 0 ? (int)$limit : 10;
             $page = (int)$page > 0 ? (int)$page : 1;
 
             // Calculate offset
             $offset = ($page - 1) * $limit;
 
-            // Get total count for pagination
-            $total_count = $this->productClass->get_products_count($search);
+            file_put_contents($debug_log, "Calculated offset: $offset\n", FILE_APPEND);
 
-            // Get products with limit and offset
+            // First get the total count
+            $total_count = $this->productClass->get_products_count($search);
+            file_put_contents($debug_log, "Total count from productClass: $total_count\n", FILE_APPEND);
+
+            // Get products with pagination
             $products = $this->productClass->get_all_products($search, $limit, $offset);
+            file_put_contents($debug_log, "Products returned: " . count($products) . "\n", FILE_APPEND);
+
+            // Calculate total pages
+            $total_pages = ceil($total_count / $limit);
+            file_put_contents($debug_log, "Total pages: $total_pages\n", FILE_APPEND);
 
             return [
                 'success' => true,
@@ -291,9 +303,10 @@ class ProductController
                 'total_count' => $total_count,
                 'page' => $page,
                 'limit' => $limit,
-                'total_pages' => ceil($total_count / $limit)
+                'total_pages' => $total_pages
             ];
         } catch (Exception $e) {
+            file_put_contents($debug_log, "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
             error_log("Error in get_all_products_ctr: " . $e->getMessage());
             return [
                 'success' => false,
