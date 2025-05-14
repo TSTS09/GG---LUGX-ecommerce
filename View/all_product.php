@@ -5,104 +5,43 @@ require_once("../Controllers/product_controller.php");
 
 $product_controller = new ProductController();
 
-/**
- * Helper function to add or update a query parameter
- * @param string $param - Parameter name
- * @param string $value - Parameter value
- * @return string - URL with updated parameter
- */
-function add_query_param($param, $value)
-{
-    $params = $_GET;
-    $params[$param] = $value;
-
-    return '?' . http_build_query($params);
-}
-
-/**
- * Helper function to update multiple query parameters
- * @param array $new_params - Associative array of parameters to update
- * @return string - URL with updated parameters
- */
-function update_query_params($new_params)
-{
-    $params = $_GET;
-
-    foreach ($new_params as $key => $value) {
-        $params[$key] = $value;
-    }
-
-    return '?' . http_build_query($params);
-}
-
 // Handle search or category filter
 $search_term = isset($_GET['search']) ? $_GET['search'] : '';
 $category_filter = isset($_GET['category']) ? $_GET['category'] : '';
-$sort = isset($_GET['sort']) ? $_GET['sort'] : '';
 
-
-// Get products - using proper pagination instead of client-side pagination
+// Get products based on filters
 if (!empty($search_term)) {
+    // For search
     $products = $product_controller->search_products_ctr($search_term);
 } elseif (!empty($category_filter)) {
-    // Check if category filter is numeric (ID) or string (name)
+    // Using category filter
     if (is_numeric($category_filter)) {
-        $products = $product_controller->get_products_by_category_ctr($category_filter);
+        $category_products = $product_controller->get_products_by_category_ctr($category_filter);
         // Get category name for display
         $category_info = $product_controller->get_one_category_ctr($category_filter);
         $category_name = $category_info ? $category_info['cat_name'] : 'Category';
+        $products = $category_products;
     } else {
         // Get category ID from name 
         $category = $product_controller->get_category_by_name_ctr($category_filter);
         if ($category) {
-            $products = $product_controller->get_products_by_category_ctr($category['cat_id']);
+            $category_products = $product_controller->get_products_by_category_ctr($category['cat_id']);
             $category_name = $category_filter;
+            $products = $category_products;
         } else {
-            // If we need all products with server-side pagination:
-            $products = $product_controller->get_all_products_ctr('', $limit, $current_page);
+            // Get all products without pagination
+            $products = $product_controller->get_all_products_ctr('', 1000, 1);
             $category_name = 'All Products';
         }
     }
 } else {
-    // Use server-side pagination with proper limit and page parameters
-    $products = $product_controller->get_all_products_ctr('', $limit, $current_page);
+    // Get all products without pagination
+    $products = $product_controller->get_all_products_ctr('', 1000, 1);
     $category_name = 'All Products';
 }
 
-// No need for client-side pagination since we're using server-side pagination
-$paginated_products = $products;
-
 // Get all categories for filtering
 $all_categories = $product_controller->get_all_categories_ctr();
-
-// Simple client-side pagination
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 12;
-
-// Apply client-side pagination if products exist
-$total_products = 0;
-$paginated_products = ['success' => false, 'data' => []];
-
-if ($products['success'] && !empty($products['data'])) {
-    $total_products = count($products['data']);
-
-    // Calculate starting and ending indices for current page
-    $start_index = ($current_page - 1) * $limit;
-    $end_index = min($start_index + $limit, $total_products);
-
-    // Create a subset of products for the current page
-    $paginated_data = array_slice($products['data'], $start_index, $limit);
-
-    $paginated_products = [
-        'success' => true,
-        'data' => $paginated_data,
-        'total_count' => $total_products,
-        'total_pages' => ceil($total_products / $limit)
-    ];
-} else {
-    // Keep the original products result
-    $paginated_products = $products;
-}
 ?>
 
 <!DOCTYPE html>
@@ -126,58 +65,13 @@ if ($products['success'] && !empty($products['data'])) {
     <link rel="icon" href="../Images/logo.png" type="image/png">
 
     <style>
-        /* Add these styles for consistent image dimensions and pagination */
+        /* Add these styles for consistent image dimensions */
         .product-card .product-image {
             width: 100%;
             height: 200px;
             object-fit: cover;
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
-        }
-
-        .pagination {
-            margin-bottom: 0;
-        }
-
-        .page-link {
-            color: #ee626b;
-            border-color: #dee2e6;
-        }
-
-        .page-item.active .page-link {
-            background-color: #ee626b;
-            border-color: #ee626b;
-        }
-
-        .page-link:hover {
-            color: #fff;
-            background-color: #e04147;
-            border-color: #e04147;
-        }
-
-        .form-inline {
-            display: flex;
-            align-items: center;
-        }
-
-        .form-inline label {
-            margin-right: 10px;
-            margin-bottom: 0;
-        }
-
-        .dropdown-item.active {
-            background-color: #ee626b;
-            color: #fff;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
         }
 
         .category-badge {
@@ -246,17 +140,10 @@ if ($products['success'] && !empty($products['data'])) {
         </div>
 
         <!-- Display Options & Pagination Controls -->
-        <?php if ($paginated_products['success'] && !empty($paginated_products['data'])): ?>
+        <?php if (isset($products['success']) && $products['success'] && !empty($products['data'])): ?>
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <div class="form-inline">
-                        <label class="mr-2">Show:</label>
-                        <select id="show-entries" class="form-control" onchange="changeDisplayCount(this.value)">
-                            <option value="12" <?php echo $limit == 12 ? 'selected' : ''; ?>>12</option>
-                            <option value="24" <?php echo $limit == 24 ? 'selected' : ''; ?>>24</option>
-                            <option value="48" <?php echo $limit == 48 ? 'selected' : ''; ?>>48</option>
-                        </select>
-                    </div>
+                    <p>Displaying all products</p>
                 </div>
                 <div class="col-md-6">
                     <div class="d-flex justify-content-end">
@@ -273,8 +160,8 @@ if ($products['success'] && !empty($products['data'])) {
         <!-- Products -->
         <div class="row">
             <?php
-            if ($paginated_products['success'] && !empty($paginated_products['data'])) {
-                foreach ($paginated_products['data'] as $product) {
+            if (isset($products['success']) && $products['success'] && !empty($products['data'])) {
+                foreach ($products['data'] as $product) {
             ?>
                     <div class="col-lg-3 col-md-6 mb-4">
                         <div class="card product-card h-100">
@@ -307,59 +194,6 @@ if ($products['success'] && !empty($products['data'])) {
             }
             ?>
         </div>
-
-        <!-- Pagination Controls -->
-        <?php if ($paginated_products['success'] && !empty($paginated_products['data']) && $paginated_products['total_count'] > $limit): ?>
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <p>Showing <?php echo count($paginated_products['data']); ?> of <?php echo $paginated_products['total_count']; ?> products</p>
-                </div>
-                <div class="col-md-6">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-end">
-                            <?php
-                            // Calculate total pages
-                            $total_pages = $paginated_products['total_pages'];
-
-                            // Previous page link
-                            if ($current_page > 1):
-                            ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="<?php echo update_query_params(['page' => $current_page - 1]); ?>" aria-label="Previous">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-
-                            <?php
-                            // Page number links
-                            $start_page = max(1, $current_page - 2);
-                            $end_page = min($total_pages, $current_page + 2);
-
-                            for ($i = $start_page; $i <= $end_page; $i++):
-                            ?>
-                                <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
-                                    <a class="page-link" href="<?php echo update_query_params(['page' => $i]); ?>">
-                                        <?php echo $i; ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-
-                            <?php
-                            // Next page link
-                            if ($current_page < $total_pages):
-                            ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="<?php echo update_query_params(['page' => $current_page + 1]); ?>" aria-label="Next">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-        <?php endif; ?>
     </div>
 
     <!-- Footer -->
@@ -375,22 +209,6 @@ if ($products['success'] && !empty($products['data'])) {
     <script src="../JS/owl-carousel.js"></script>
     <script src="../JS/counter.js"></script>
     <script src="../JS/custom.js"></script>
-
-    <script>
-        function changeDisplayCount(limit) {
-            // Get current URL
-            let url = new URL(window.location.href);
-
-            // Set the limit parameter
-            url.searchParams.set('limit', limit);
-
-            // Reset to first page when changing limit
-            url.searchParams.set('page', 1);
-
-            // Redirect to new URL
-            window.location.href = url.toString();
-        }
-    </script>
 </body>
 
 </html>

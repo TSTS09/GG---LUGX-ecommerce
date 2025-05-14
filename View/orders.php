@@ -53,7 +53,7 @@ $page_title = "My Orders - Track Your Purchases";
             border-radius: 5px;
             display: none;
         }
-        
+
         .product-image-small {
             width: 40px;
             height: 40px;
@@ -61,7 +61,7 @@ $page_title = "My Orders - Track Your Purchases";
             border-radius: 4px;
             margin-right: 10px;
         }
-        
+
         .view-details-btn {
             cursor: pointer;
         }
@@ -164,12 +164,15 @@ $page_title = "My Orders - Track Your Purchases";
                                                 if ($order_items['success'] && !empty($order_items['data'])):
                                                     foreach ($order_items['data'] as $item):
                                                 ?>
-                                                        <tr>
+                                                        <tr <?php echo isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1 ? 'class="table-secondary"' : ''; ?>>
                                                             <td>
                                                                 <?php if (!empty($item['product_image'])): ?>
                                                                     <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" class="product-image-small">
                                                                 <?php endif; ?>
                                                                 <?php echo $item['product_title']; ?>
+                                                                <?php if (isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1): ?>
+                                                                    <span class="badge badge-secondary">Unavailable</span>
+                                                                <?php endif; ?>
                                                             </td>
                                                             <td><?php echo $item['qty']; ?></td>
                                                             <td>$<?php echo number_format($item['product_price'], 2); ?></td>

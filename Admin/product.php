@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 require_once("../Setting/core.php");
 
@@ -12,13 +11,9 @@ if (!is_logged_in() || !is_admin()) {
 require_once("../Controllers/product_controller.php");
 $product_controller = new ProductController();
 
-// Get pagination parameters
-$current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+// Get all products without pagination
 $search = isset($_GET['search']) ? $_GET['search'] : '';
-
-// Get products with pagination
-$products = $product_controller->get_all_products_ctr($search, $limit, $current_page);
+$products = $product_controller->get_all_products_ctr($search, 1000, 1);
 
 // Get categories and brands for the form
 $categories = $product_controller->get_all_categories_ctr();
@@ -64,10 +59,6 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
             height: 50px;
             object-fit: cover;
             border-radius: 5px;
-        }
-
-        .pagination {
-            margin-bottom: 0;
         }
 
         .form-inline {
@@ -218,20 +209,9 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                 <div class="product-table">
                     <h4>All Products</h4>
 
-                    <!-- Display Options & Pagination Controls -->
+                    <!-- Search functionality only -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-inline">
-                                <label for="show-entries">Show entries: </label>
-                                <select id="show-entries" class="form-control" onchange="changeDisplayCount(this.value)">
-                                    <option value="10" <?php echo $limit == 10 ? 'selected' : ''; ?>>10</option>
-                                    <option value="25" <?php echo $limit == 25 ? 'selected' : ''; ?>>25</option>
-                                    <option value="50" <?php echo $limit == 50 ? 'selected' : ''; ?>>50</option>
-                                    <option value="100" <?php echo $limit == 100 ? 'selected' : ''; ?>>100</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-inline float-right">
                                 <input type="text" id="search-products" class="form-control mr-2" placeholder="Search products..."
                                     value="<?php echo htmlspecialchars($search); ?>">
@@ -260,7 +240,7 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                 <tbody>
                                     <?php
                                     // Initialize counter for row numbering
-                                    $counter = ($current_page - 1) * $limit + 1;
+                                    $counter = 1;
                                     foreach ($products['data'] as $product):
                                     ?>
                                         <tr>
@@ -277,8 +257,8 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                             <td><?php echo $product['brand_name']; ?></td>
                                             <td>$<?php echo number_format($product['product_price'], 2); ?></td>
                                             <td>
-                                                <a href="product.php?edit=<?php echo $product['product_id']; ?>&page=<?php echo $current_page; ?>&limit=<?php echo $limit; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn btn-sm btn-primary">Edit</a>
-                                                <a href="../Actions/delete_product.php?id=<?php echo $product['product_id']; ?>&return=<?php echo urlencode("product.php?page={$current_page}&limit={$limit}" . (!empty($search) ? "&search=" . urlencode($search) : "")); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this product?')">Delete</a>
+                                                <a href="product.php?edit=<?php echo $product['product_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                <a href="../Actions/delete_product.php?id=<?php echo $product['product_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this product?')">Delete</a>
                                             </td>
                                         </tr>
                                     <?php
@@ -289,55 +269,10 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- Pagination Controls -->
+                        
                         <div class="row">
-                            <div class="col-md-6">
-                                <p class="page-info">Showing <?php echo count($products['data']); ?> of <?php echo $products['total_count']; ?> entries</p>
-                            </div>
-                            <div class="col-md-6">
-                                <nav aria-label="Page navigation">
-                                    <ul class="pagination justify-content-end">
-                                        <?php
-                                        // Calculate total pages
-                                        $total_pages = $products['total_pages'];
-
-                                        // Previous page link
-                                        if ($current_page > 1):
-                                        ?>
-                                            <li class="page-item">
-                                                <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&limit=<?php echo $limit; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" aria-label="Previous">
-                                                    <span aria-hidden="true">&laquo;</span>
-                                                </a>
-                                            </li>
-                                        <?php endif; ?>
-
-                                        <?php
-                                        // Page number links
-                                        $start_page = max(1, $current_page - 2);
-                                        $end_page = min($total_pages, $current_page + 2);
-
-                                        for ($i = $start_page; $i <= $end_page; $i++):
-                                        ?>
-                                            <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
-                                                <a class="page-link" href="?page=<?php echo $i; ?>&limit=<?php echo $limit; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>">
-                                                    <?php echo $i; ?>
-                                                </a>
-                                            </li>
-                                        <?php endfor; ?>
-
-                                        <?php
-                                        // Next page link
-                                        if ($current_page < $total_pages):
-                                        ?>
-                                            <li class="page-item">
-                                                <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&limit=<?php echo $limit; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" aria-label="Next">
-                                                    <span aria-hidden="true">&raquo;</span>
-                                                </a>
-                                            </li>
-                                        <?php endif; ?>
-                                    </ul>
-                                </nav>
+                            <div class="col-md-12">
+                                <p>Displaying all <?php echo count($products['data']); ?> products</p>
                             </div>
                         </div>
                     <?php else: ?>
@@ -361,8 +296,41 @@ if (isset($_GET['edit']) && !empty($_GET['edit'])) {
     <script src="../JS/jquery/jquery.min.js"></script>
     <script src="../JS/bootstrap/js/bootstrap.min.js"></script>
     <script src="../JS/validate_product.js"></script>
-    <script src="../JS/pagination-admin.js"></script>
-   
+    
+    <script>
+        // Function to show image preview
+        document.getElementById('product_image').addEventListener('change', function (e) {
+            const preview = document.getElementById('image-preview');
+            const file = e.target.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Function to search products
+        function searchProducts() {
+            // Get search term
+            let searchTerm = document.getElementById('search-products').value;
+
+            // Redirect to product page with search term
+            window.location.href = 'product.php?search=' + encodeURIComponent(searchTerm);
+        }
+
+        // Search on Enter key press
+        document.getElementById('search-products').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchProducts();
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -499,40 +499,6 @@ class ProductClass extends db_connection
 
 
     /**
-     * Get a single product by ID
-     * @param int $product_id - The product ID
-     * @return array|bool - Product data or false if not found
-     */
-    public function get_one_product($product_id)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM products p 
-                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
-                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_id = ?";
-
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $product_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            return $result->fetch_assoc();
-        } catch (Exception $e) {
-            error_log("Error fetching product: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
      * Update a product
      * @param int $product_id - Product ID
      * @param int $product_cat - Category ID
@@ -657,246 +623,6 @@ class ProductClass extends db_connection
         }
     }
 
-    /**
-     * Get products by category
-     * @param int $cat_id - Category ID
-     * @param int $limit - Optional result limit
-     * @return array - Array of products
-     */
-    public function get_products_by_category($cat_id, $limit = 0)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM products p 
-                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
-                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_cat = ?";
-
-            // Add ordering
-            $sql .= " ORDER BY p.product_id DESC";
-
-            // Add limit if specified
-            if ($limit > 0) {
-                $sql .= " LIMIT ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ii", $cat_id, $limit);
-            } else {
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("i", $cat_id);
-            }
-
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $products = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-
-            return $products;
-        } catch (Exception $e) {
-            error_log("Error fetching products by category: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Get products by brand
-     * @param int $brand_id - Brand ID
-     * @param int $limit - Optional result limit
-     * @return array - Array of products
-     */
-    public function get_products_by_brand($brand_id, $limit = 0)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM products p 
-                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
-                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_brand = ?";
-
-            // Add ordering
-            $sql .= " ORDER BY p.product_id DESC";
-
-            // Add limit if specified
-            if ($limit > 0) {
-                $sql .= " LIMIT ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ii", $brand_id, $limit);
-            } else {
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("i", $brand_id);
-            }
-
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $products = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-
-            return $products;
-        } catch (Exception $e) {
-            error_log("Error fetching products by brand: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Search products
-     * @param string $search_term - Search term
-     * @return array - Array of products matching search
-     */
-    public function search_products($search_term)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $search_term = mysqli_real_escape_string($conn, $search_term);
-            $search_param = "%$search_term%";
-
-            $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM products p 
-                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
-                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   WHERE p.product_title LIKE ? 
-                   OR p.product_keywords LIKE ? 
-                   OR p.product_desc LIKE ?
-                   ORDER BY p.product_id DESC";
-
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("sss", $search_param, $search_param, $search_param);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $products = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-
-            return $products;
-        } catch (Exception $e) {
-            error_log("Error searching products: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Get featured products (newest products)
-     * @param int $limit - Number of products to return
-     * @return array - Array of featured products
-     */
-    public function get_featured_products($limit = 8)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $sql = "SELECT p.*, c.cat_name, b.brand_name 
-                   FROM products p 
-                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
-                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
-                   ORDER BY p.product_id DESC 
-                   LIMIT ?";
-
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $limit);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $products = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-
-            return $products;
-        } catch (Exception $e) {
-            error_log("Error fetching featured products: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Get bestselling products based on order data
-     * @param int $limit - Number of products to return
-     * @return array - Array of bestselling products
-     */
-    public function get_bestselling_products($limit = 6)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            // This is a sample implementation assuming you have an order_details table
-            // with product_id and quantity columns
-            $sql = "SELECT p.*, c.cat_name, b.brand_name, SUM(od.qty) as total_sold 
-               FROM products p
-               LEFT JOIN categories c ON p.product_cat = c.cat_id 
-               LEFT JOIN brands b ON p.product_brand = b.brand_id
-               LEFT JOIN orderdetails od ON p.product_id = od.product_id
-               GROUP BY p.product_id
-               ORDER BY total_sold DESC
-               LIMIT ?";
-
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $limit);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $products = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-
-            // If no products found with sales data, fall back to featured products
-            if (empty($products) && $limit > 0) {
-                return $this->get_featured_products($limit);
-            }
-
-            return $products;
-        } catch (Exception $e) {
-            error_log("Error fetching bestselling products: " . $e->getMessage());
-            return [];
-        }
-    }
 
     /**
      * Get category by name
@@ -933,7 +659,42 @@ class ProductClass extends db_connection
 
 
     /**
-     * Get all products
+     * Get a single product by ID
+     * @param int $product_id - The product ID
+     * @return array|bool - Product data or false if not found
+     */
+    public function get_one_product($product_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT p.*, c.cat_name, b.brand_name 
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
+                   WHERE p.product_id = ?";
+            // Note: We don't filter deleted products here as we might need to access them for order history
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $product_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            return $result->fetch_assoc();
+        } catch (Exception $e) {
+            error_log("Error fetching product: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get all products with pagination support
      * @param string $search - Optional search term
      * @param int $limit - Optional result limit
      * @param int $offset - Optional offset for pagination
@@ -951,11 +712,12 @@ class ProductClass extends db_connection
             // Log connection status
             file_put_contents($debug_log, "Database connection: " . ($conn ? "Successful" : "Failed") . "\n", FILE_APPEND);
 
-            // SIMPLIFIED QUERY - Just get all products with no filters except search
+            // SIMPLIFIED QUERY - Now with deleted filter
             $sql = "SELECT p.*, c.cat_name, b.brand_name 
-               FROM products p 
-               LEFT JOIN categories c ON p.product_cat = c.cat_id 
-               LEFT JOIN brands b ON p.product_brand = b.brand_id";
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id
+                   WHERE p.deleted = 0 OR p.deleted IS NULL";  // Filter out deleted products
 
             $params = [];
             $types = "";
@@ -963,7 +725,7 @@ class ProductClass extends db_connection
             // Add search condition if search term exists
             if (!empty($search)) {
                 $search = mysqli_real_escape_string($conn, $search);
-                $sql .= " WHERE (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
+                $sql .= " AND (p.product_title LIKE ? OR p.product_keywords LIKE ? OR p.product_desc LIKE ?)";
                 $search_param = "%$search%";
                 $params[] = $search_param;
                 $params[] = $search_param;
@@ -973,9 +735,6 @@ class ProductClass extends db_connection
 
             // Add ordering
             $sql .= " ORDER BY p.product_id DESC";
-
-            // Create a copy of the SQL for counting total results
-            $count_sql = $sql;
 
             // Add limit and offset if specified
             if ($limit > 0) {
@@ -1041,12 +800,12 @@ class ProductClass extends db_connection
         try {
             $conn = $this->db_conn();
 
-            // EXTREMELY SIMPLIFIED QUERY - Just count all products with no filters except search
-            $sql = "SELECT COUNT(*) as total FROM products";
+            // EXTREMELY SIMPLIFIED QUERY - Now with deleted filter
+            $sql = "SELECT COUNT(*) as total FROM products WHERE (deleted = 0 OR deleted IS NULL)";
 
             if (!empty($search)) {
                 $search = mysqli_real_escape_string($conn, $search);
-                $sql .= " WHERE (product_title LIKE ? OR product_keywords LIKE ? OR product_desc LIKE ?)";
+                $sql .= " AND (product_title LIKE ? OR product_keywords LIKE ? OR product_desc LIKE ?)";
                 $search_param = "%$search%";
 
                 $stmt = $conn->prepare($sql);
@@ -1082,6 +841,278 @@ class ProductClass extends db_connection
             file_put_contents($debug_log, "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
             error_log("Error getting product count: " . $e->getMessage());
             return 0;
+        }
+    }
+
+    /**
+     * Get products by category
+     * @param int $cat_id - Category ID
+     * @param int $limit - Optional result limit
+     * @return array - Array of products
+     */
+    public function get_products_by_category($cat_id, $limit = 0)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT p.*, c.cat_name, b.brand_name 
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
+                   WHERE p.product_cat = ? AND (p.deleted = 0 OR p.deleted IS NULL)";  // Add deleted filter
+
+            // Add ordering
+            $sql .= " ORDER BY p.product_id DESC";
+
+            // Add limit if specified
+            if ($limit > 0) {
+                $sql .= " LIMIT ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ii", $cat_id, $limit);
+            } else {
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $cat_id);
+            }
+
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $products = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+
+            return $products;
+        } catch (Exception $e) {
+            error_log("Error fetching products by category: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get products by brand
+     * @param int $brand_id - Brand ID
+     * @param int $limit - Optional result limit
+     * @return array - Array of products
+     */
+    public function get_products_by_brand($brand_id, $limit = 0)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT p.*, c.cat_name, b.brand_name 
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
+                   WHERE p.product_brand = ? AND (p.deleted = 0 OR p.deleted IS NULL)";  // Add deleted filter
+
+            // Add ordering
+            $sql .= " ORDER BY p.product_id DESC";
+
+            // Add limit if specified
+            if ($limit > 0) {
+                $sql .= " LIMIT ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ii", $brand_id, $limit);
+            } else {
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $brand_id);
+            }
+
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $products = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+
+            return $products;
+        } catch (Exception $e) {
+            error_log("Error fetching products by brand: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Search products
+     * @param string $search_term - Search term
+     * @return array - Array of products matching search
+     */
+    public function search_products($search_term)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $search_term = mysqli_real_escape_string($conn, $search_term);
+            $search_param = "%$search_term%";
+
+            $sql = "SELECT p.*, c.cat_name, b.brand_name 
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
+                   WHERE (p.product_title LIKE ? 
+                   OR p.product_keywords LIKE ? 
+                   OR p.product_desc LIKE ?)
+                   AND (p.deleted = 0 OR p.deleted IS NULL)  /* Add deleted filter */
+                   ORDER BY p.product_id DESC";
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("sss", $search_param, $search_param, $search_param);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $products = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+
+            return $products;
+        } catch (Exception $e) {
+            error_log("Error searching products: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get featured products (newest products)
+     * @param int $limit - Number of products to return
+     * @return array - Array of featured products
+     */
+    public function get_featured_products($limit = 8)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT p.*, c.cat_name, b.brand_name 
+                   FROM products p 
+                   LEFT JOIN categories c ON p.product_cat = c.cat_id 
+                   LEFT JOIN brands b ON p.product_brand = b.brand_id 
+                   WHERE (p.deleted = 0 OR p.deleted IS NULL)  /* Add deleted filter */
+                   ORDER BY p.product_id DESC 
+                   LIMIT ?";
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $limit);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $products = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+
+            return $products;
+        } catch (Exception $e) {
+            error_log("Error fetching featured products: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get bestselling products based on order data
+     * @param int $limit - Number of products to return
+     * @return array - Array of bestselling products
+     */
+    public function get_bestselling_products($limit = 6)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // This is a sample implementation assuming you have an order_details table
+            // with product_id and quantity columns - now with deleted filter
+            $sql = "SELECT p.*, c.cat_name, b.brand_name, SUM(od.qty) as total_sold 
+               FROM products p
+               LEFT JOIN categories c ON p.product_cat = c.cat_id 
+               LEFT JOIN brands b ON p.product_brand = b.brand_id
+               LEFT JOIN orderdetails od ON p.product_id = od.product_id
+               WHERE (p.deleted = 0 OR p.deleted IS NULL)  /* Add deleted filter */
+               GROUP BY p.product_id
+               ORDER BY total_sold DESC
+               LIMIT ?";
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $limit);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $products = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+
+            // If no products found with sales data, fall back to featured products
+            if (empty($products) && $limit > 0) {
+                return $this->get_featured_products($limit);
+            }
+
+            return $products;
+        } catch (Exception $e) {
+            error_log("Error fetching bestselling products: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Soft delete a product (mark as deleted instead of removing)
+     * @param int $product_id - The product ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function soft_delete_product($product_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "UPDATE products SET deleted = 1 WHERE product_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $product_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            return $stmt->affected_rows > 0;
+        } catch (Exception $e) {
+            error_log("Error soft deleting product: " . $e->getMessage());
+            return false;
         }
     }
 }

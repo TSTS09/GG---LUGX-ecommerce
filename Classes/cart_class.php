@@ -368,44 +368,6 @@ class CartClass extends db_connection
     }
 
     /**
-     * Get order items
-     * @param int $order_id - Order ID
-     * @return array - Array of order items and their details
-     */
-    public function get_order_items($order_id)
-    {
-        try {
-            $conn = $this->db_conn();
-
-            $sql = "SELECT od.*, p.product_title, p.product_price, p.product_image, 
-                           (od.qty * p.product_price) as item_total 
-                    FROM orderdetails od 
-                    JOIN products p ON od.product_id = p.product_id 
-                    WHERE od.order_id = ?";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare statement failed: " . $conn->error);
-            }
-
-            $stmt->bind_param("i", $order_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Execute statement failed: " . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $items = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $items[] = $row;
-            }
-
-            return $items;
-        } catch (Exception $e) {
-            error_log("Error getting order items: " . $e->getMessage());
-            return [];
-        }
-    }
-    /**
      * Create a new order from cart items
      * @param int $customer_id - Customer ID
      * @param float $order_amount - Order amount
@@ -689,6 +651,49 @@ class CartClass extends db_connection
         } catch (Exception $e) {
             error_log("Error updating order status: " . $e->getMessage());
             return false;
+        }
+    }
+    /**
+     * Get order items with product info, including deleted products
+     * @param int $order_id - Order ID
+     * @return array - Array of order items and their details
+     */
+    public function get_order_items($order_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT od.*, p.product_title, p.product_price, p.product_image, 
+                    (od.qty * p.product_price) as item_total,
+                    p.deleted as is_product_deleted
+                FROM orderdetails od 
+                LEFT JOIN products p ON od.product_id = p.product_id 
+                WHERE od.order_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("i", $order_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $items = [];
+
+            while ($row = $result->fetch_assoc()) {
+                // If product is deleted, add a note to the title
+                if ($row['is_product_deleted'] == 1) {
+                    $row['product_title'] = $row['product_title'] . ' (Product no longer available)';
+                }
+                $items[] = $row;
+            }
+
+            return $items;
+        } catch (Exception $e) {
+            error_log("Error getting order items: " . $e->getMessage());
+            return [];
         }
     }
 }

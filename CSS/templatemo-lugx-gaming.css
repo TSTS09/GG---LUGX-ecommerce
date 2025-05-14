@@ -1755,3 +1755,17 @@ body {
   height: 200px;
   object-fit: cover;
 }
+/* For highlighting deleted products */
+.product-unavailable {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.badge-unavailable {
+    background-color: #6c757d;
+    color: white;
+    font-size: 0.75em;
+    padding: 3px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+}

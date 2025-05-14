@@ -79,7 +79,7 @@ $page_title = "Order Details #" . $order_id;
             max-width: 1200px;
             margin: 100px auto;
         }
-        
+
         .order-card {
             background-color: #fff;
             border-radius: 10px;
@@ -87,7 +87,7 @@ $page_title = "Order Details #" . $order_id;
             padding: 30px;
             margin-bottom: 30px;
         }
-        
+
         .order-header {
             display: flex;
             justify-content: space-between;
@@ -95,7 +95,7 @@ $page_title = "Order Details #" . $order_id;
             border-bottom: 1px solid #eee;
             padding-bottom: 20px;
         }
-        
+
         .order-status {
             display: inline-block;
             padding: 5px 15px;
@@ -103,37 +103,37 @@ $page_title = "Order Details #" . $order_id;
             font-weight: 600;
             font-size: 14px;
         }
-        
+
         .status-completed {
             background-color: #d4edda;
             color: #155724;
         }
-        
+
         .status-processing {
             background-color: #cce5ff;
             color: #004085;
         }
-        
+
         .status-shipped {
             background-color: #d1ecf1;
             color: #0c5460;
         }
-        
+
         .status-delivered {
             background-color: #d4edda;
             color: #155724;
         }
-        
+
         .status-pending {
             background-color: #fff3cd;
             color: #856404;
         }
-        
+
         .status-canceled {
             background-color: #f8d7da;
             color: #721c24;
         }
-        
+
         .section-title {
             font-size: 18px;
             font-weight: 600;
@@ -141,7 +141,7 @@ $page_title = "Order Details #" . $order_id;
             padding-bottom: 10px;
             border-bottom: 1px solid #f1f1f1;
         }
-        
+
         .product-image {
             width: 50px;
             height: 50px;
@@ -149,7 +149,7 @@ $page_title = "Order Details #" . $order_id;
             border-radius: 5px;
             margin-right: 10px;
         }
-        
+
         .currency-info {
             background-color: #f8f9fa;
             padding: 15px;
@@ -208,7 +208,7 @@ $page_title = "Order Details #" . $order_id;
                     }
                     ?>
                     <span class="order-status <?php echo $status_class; ?>"><?php echo $order_data['order_status']; ?></span>
-                    
+
                     <div class="mt-3">
                         <a href="print_invoice.php?id=<?php echo $order_id; ?>" class="btn btn-primary" target="_blank">
                             <i class="fa fa-print"></i> Print Invoice
@@ -229,7 +229,7 @@ $page_title = "Order Details #" . $order_id;
                         <p>Customer details not available</p>
                     <?php endif; ?>
                 </div>
-                
+
                 <div class="col-md-6">
                     <div class="section-title">Payment Information</div>
                     <p><strong>Payment Method:</strong> <?php echo $payment_info['payment_method'] ?? 'Online Payment'; ?></p>
@@ -268,21 +268,24 @@ $page_title = "Order Details #" . $order_id;
                                 $item_total = $item['product_price'] * $item['qty'];
                                 $subtotal += $item_total;
                         ?>
-                                <tr>
+                                <tr <?php echo isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1 ? 'class="table-secondary"' : ''; ?>>
                                     <td>
                                         <?php if (!empty($item['product_image'])): ?>
                                             <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" class="product-image">
                                         <?php endif; ?>
                                         <?php echo $item['product_title']; ?>
+                                        <?php if (isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1): ?>
+                                            <span class="badge badge-secondary">Product no longer available</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td><?php echo $item['qty']; ?></td>
                                     <td>$<?php echo number_format($item['product_price'], 2); ?></td>
                                     <td>$<?php echo number_format($item_total, 2); ?></td>
                                 </tr>
-                        <?php
+                            <?php
                             endforeach;
                         else:
-                        ?>
+                            ?>
                             <tr>
                                 <td colspan="4" class="text-center">No items found for this order.</td>
                             </tr>

@@ -139,16 +139,21 @@ $ghs_amount = isset($payment_info['ghs_amount']) ? $payment_info['ghs_amount'] :
                         $item_total = $item['product_price'] * $item['qty'];
                         $subtotal += $item_total;
                 ?>
-                        <tr>
-                            <td><?php echo $item['product_title']; ?></td>
+                        <tr <?php echo isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1 ? 'style="background-color: #f2f2f2;"' : ''; ?>>
+                            <td>
+                                <?php echo $item['product_title']; ?>
+                                <?php if (isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1): ?>
+                                    <span style="font-size: 0.8em; color: #666; display: block;">(Product no longer available)</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo $item['qty']; ?></td>
                             <td>$<?php echo number_format($item['product_price'], 2); ?></td>
                             <td class="text-right">$<?php echo number_format($item_total, 2); ?></td>
                         </tr>
-                <?php
+                    <?php
                     endforeach;
                 else:
-                ?>
+                    ?>
                     <tr>
                         <td colspan="4">No items found for this order.</td>
                     </tr>

@@ -105,8 +105,13 @@ $order_items = $cart_controller->get_order_items_ctr($order_id);
                         <tbody>
                             <?php if ($order_items['success'] && !empty($order_items['data'])): ?>
                                 <?php foreach ($order_items['data'] as $item): ?>
-                                    <tr>
-                                        <td><?php echo $item['product_title']; ?></td>
+                                    <tr <?php echo isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1 ? 'class="table-secondary"' : ''; ?>>
+                                        <td>
+                                            <?php echo $item['product_title']; ?>
+                                            <?php if (isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1): ?>
+                                                <span class="badge badge-secondary">Product no longer available</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo $item['qty']; ?></td>
                                         <td>$<?php echo number_format($item['product_price'], 2); ?></td>
                                         <td>$<?php echo number_format($item['item_total'], 2); ?></td>

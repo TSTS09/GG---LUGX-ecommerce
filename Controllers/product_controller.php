@@ -315,4 +315,8 @@ class ProductController
             ];
         }
     }
+    public function soft_delete_product_ctr($product_id)
+    {
+        return $this->productClass->soft_delete_product($product_id);
+    }
 }

@@ -12,13 +12,13 @@ if (!is_logged_in() || !is_admin()) {
 // Check if ID is provided
 if (isset($_GET['id']) && !empty($_GET['id'])) {
     $product_id = (int)$_GET['id'];
-    
+
     // Create controller instance
     $product_controller = new ProductController();
-    
+
     // Soft delete product (instead of hard delete)
     $result = $product_controller->soft_delete_product_ctr($product_id);
-    
+
     if ($result) {
         // Redirect back to product management page with success message
         $_SESSION['message'] = [
