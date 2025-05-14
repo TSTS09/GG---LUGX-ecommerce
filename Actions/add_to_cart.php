@@ -53,11 +53,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || isset($_GET['id'])) {
     // Create cart controller instance
     $cart_controller = new CartController();
 
-    // Check if product is already in cart
+    // Check if product is already in cart - only check current cart, not past orders
     $existing_item = $cart_controller->check_product_in_cart_ctr($product_id, $customer_id);
 
     if ($existing_item) {
-        // Product already in cart, redirect to cart page
+        // If already in cart, update quantity instead of showing an error
         $_SESSION['message'] = [
             'type' => 'info',
             'text' => 'This product is already in your cart. You can adjust the quantity there.'

@@ -89,16 +89,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // Server settings - MODIFY THESE WITH YOUR ACTUAL SMTP SETTINGS
                 $mail->isSMTP();
-                $mail->Host       = 'smtp.gmail.com';  
+                $mail->SMTPOptions = [
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true
+                    ]
+                ];
+                $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'sekaletchio@gmail.com'; 
-                $mail->Password   = 'npio bjol fmfn jxgy ';    
+                $mail->Username   = 'sekaletchio@gmail.com';
+                $mail->Password   = 'npiobjolfmfnjxgy ';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
                 // Recipients
                 $mail->setFrom('noreply@gg-lugx.com', 'GG-LUGX Contact Form');
-                $mail->addAddress('sekaletchio@gmail.com', 'GG-LUGX Admin'); // Replace with recipient email
+                $mail->addAddress('sekaletchio@gmail.com', 'GG-LUGX Admin'); 
                 $mail->addReplyTo($email, "$name $surname");
 
                 // Content
