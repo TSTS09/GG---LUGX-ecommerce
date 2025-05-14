@@ -3,24 +3,17 @@ session_start();
 require_once("../Setting/core.php");
 require_once("../Controllers/cart_controller.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php?redirect=cart");
-    exit;
-}
+// Create cart controller instance
+$cart_controller = new CartController();
 
-// Process form data
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form data
-    $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
-    $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+// Check if product ID is provided
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['product_id']) && isset($_POST['quantity'])) {
+    $product_id = (int)$_POST['product_id'];
+    $quantity = (int)$_POST['quantity'];
     
     // Validate inputs
     if ($product_id <= 0) {
-        $_SESSION['message'] = [
-            'type' => 'error',
-            'text' => 'Invalid product ID'
-        ];
+        $_SESSION['message'] = ['type' => 'error', 'text' => 'Invalid product ID'];
         header("Location: ../View/cart.php");
         exit;
     }
@@ -35,37 +28,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $quantity = 10; // Limit to maximum 10 items
     }
     
-    // Get customer ID from session
-    $customer_id = $_SESSION['customer_id'];
-    
-    // Create cart controller instance
-    $cart_controller = new CartController();
-    
-    // Update cart quantity
-    $result = $cart_controller->update_cart_quantity_ctr($product_id, $customer_id, $quantity);
+    // Handle based on user type
+    if (is_logged_in()) {
+        // For logged in users
+        $customer_id = $_SESSION['customer_id'];
+        $result = $cart_controller->update_cart_quantity_ctr($product_id, $customer_id, $quantity);
+    } else {
+        // For guest users
+        if (!isset($_SESSION['guest_session_id'])) {
+            $_SESSION['guest_session_id'] = uniqid('guest_', true);
+        }
+        $guest_id = $_SESSION['guest_session_id'];
+        
+        // Use a similar function for guests (you'll need to implement this)
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+        // Remove the old item and add with new quantity
+        $result = $cart_controller->remove_from_guest_cart_ctr($product_id, $guest_id) && 
+                  $cart_controller->add_to_guest_cart_ctr($product_id, $ip_address, $guest_id, $quantity);
+    }
     
     if ($result) {
-        // Success
-        $_SESSION['message'] = [
-            'type' => 'success',
-            'text' => 'Cart updated successfully'
-        ];
+        $_SESSION['message'] = ['type' => 'success', 'text' => 'Cart updated successfully'];
     } else {
-        // Error
-        $_SESSION['message'] = [
-            'type' => 'error',
-            'text' => 'Failed to update cart'
-        ];
+        $_SESSION['message'] = ['type' => 'error', 'text' => 'Failed to update cart'];
     }
 } else {
-    // Invalid request method
-    $_SESSION['message'] = [
-        'type' => 'error',
-        'text' => 'Invalid request method'
-    ];
+    $_SESSION['message'] = ['type' => 'error', 'text' => 'Invalid request method'];
 }
 
-// Redirect back to cart page
 header("Location: ../View/cart.php");
 exit;
 ?>

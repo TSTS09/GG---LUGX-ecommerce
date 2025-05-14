@@ -696,4 +696,344 @@ class CartClass extends db_connection
             return [];
         }
     }
+
+    /**
+     * Add product to guest cart
+     * @param int $product_id - Product ID
+     * @param string $ip_address - Client IP address
+     * @param string $guest_id - Guest session ID
+     * @param int $quantity - Quantity
+     * @return bool - True if successful, false otherwise
+     */
+    public function add_to_guest_cart($product_id, $ip_address, $guest_id, $quantity = 1)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Check if product exists
+            $check_sql = "SELECT product_id FROM products WHERE product_id = ?";
+            $check_stmt = $conn->prepare($check_sql);
+            $check_stmt->bind_param("i", $product_id);
+            $check_stmt->execute();
+            $result = $check_stmt->get_result();
+
+            if ($result->num_rows == 0) {
+                throw new Exception("Product does not exist");
+            }
+
+            // Check if product is already in guest cart
+            $check_cart_sql = "SELECT p_id FROM cart WHERE p_id = ? AND guest_session_id = ?";
+            $check_cart_stmt = $conn->prepare($check_cart_sql);
+            $check_cart_stmt->bind_param("is", $product_id, $guest_id);
+            $check_cart_stmt->execute();
+            $cart_result = $check_cart_stmt->get_result();
+
+            if ($cart_result->num_rows > 0) {
+                // Update quantity instead
+                $update_sql = "UPDATE cart SET qty = qty + ? WHERE p_id = ? AND guest_session_id = ?";
+                $update_stmt = $conn->prepare($update_sql);
+                $update_stmt->bind_param("iis", $quantity, $product_id, $guest_id);
+                return $update_stmt->execute();
+            }
+
+            // Insert into cart
+            $sql = "INSERT INTO cart (p_id, ip_add, guest_session_id, qty) VALUES (?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("issi", $product_id, $ip_address, $guest_id, $quantity);
+            return $stmt->execute();
+        } catch (Exception $e) {
+            error_log("Error adding to guest cart: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if product is already in guest cart
+     * @param int $product_id - Product ID
+     * @param string $guest_id - Guest session ID
+     * @return bool - True if product is in cart, false otherwise
+     */
+    public function check_product_in_guest_cart($product_id, $guest_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT p_id FROM cart WHERE p_id = ? AND guest_session_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("is", $product_id, $guest_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            return $result->num_rows > 0;
+        } catch (Exception $e) {
+            error_log("Error checking product in guest cart: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get all products in guest cart
+     * @param string $guest_id - Guest session ID
+     * @return array - Array of products in cart and their details
+     */
+    public function get_guest_cart_items($guest_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT c.p_id, c.qty, p.product_title, p.product_price, p.product_image, 
+                           (c.qty * p.product_price) as item_total
+                    FROM cart c
+                    JOIN products p ON c.p_id = p.product_id
+                    WHERE c.guest_session_id = ?
+                    ORDER BY c.p_id DESC";
+
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $guest_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $items = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $items[] = $row;
+            }
+
+            return $items;
+        } catch (Exception $e) {
+            error_log("Error getting guest cart items: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get guest cart total
+     * @param string $guest_id - Guest session ID
+     * @return float - Cart total
+     */
+    public function get_guest_cart_total($guest_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT SUM(c.qty * p.product_price) as total
+                    FROM cart c
+                    JOIN products p ON c.p_id = p.product_id
+                    WHERE c.guest_session_id = ?";
+
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $guest_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+
+            return $row['total'] ?? 0;
+        } catch (Exception $e) {
+            error_log("Error getting guest cart total: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get guest cart count
+     * @param string $guest_id - Guest session ID
+     * @return int - Number of items in cart
+     */
+    public function get_guest_cart_count($guest_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT COUNT(*) as count FROM cart WHERE guest_session_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $guest_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+
+            return $row['count'] ?? 0;
+        } catch (Exception $e) {
+            error_log("Error getting guest cart count: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Create order from guest cart
+     * @param float $order_amount - Order amount
+     * @param string $invoice_no - Invoice number
+     * @param string $order_status - Order status
+     * @param string $reference - Transaction reference
+     * @param string $guest_email - Guest email
+     * @param string $guest_name - Guest name
+     * @param string $guest_id - Guest session ID
+     * @return int|bool - Order ID if successful, false otherwise
+     */
+    public function create_guest_order($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "INSERT INTO orders (customer_id, guest_email, guest_name, invoice_no, order_date, order_status, order_amount, reference) 
+                   VALUES (NULL, ?, ?, ?, NOW(), ?, ?, ?)";
+
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssisss", $guest_email, $guest_name, $invoice_no, $order_status, $order_amount, $reference);
+
+            if (!$stmt->execute()) {
+                error_log("Failed to create guest order: " . $stmt->error);
+                return false;
+            }
+
+            $order_id = $conn->insert_id;
+
+            // Move guest cart items to order details
+            $this->move_guest_cart_to_order_details($guest_id, $order_id);
+
+            return $order_id;
+        } catch (Exception $e) {
+            error_log("Exception in create_guest_order: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Move guest cart items to order details
+     * @param string $guest_id - Guest session ID
+     * @param int $order_id - Order ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function move_guest_cart_to_order_details($guest_id, $order_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Get guest cart items
+            $cart_items = $this->get_guest_cart_items($guest_id);
+
+            if (empty($cart_items)) {
+                throw new Exception("No items in guest cart");
+            }
+
+            // Begin transaction
+            $conn->begin_transaction();
+
+            // Insert each cart item into order details
+            foreach ($cart_items as $item) {
+                $sql = "INSERT INTO orderdetails (order_id, product_id, qty) VALUES (?, ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("iii", $order_id, $item['p_id'], $item['qty']);
+
+                if (!$stmt->execute()) {
+                    throw new Exception("Failed to insert order detail: " . $stmt->error);
+                }
+            }
+
+            // Clear guest cart
+            $sql = "DELETE FROM cart WHERE guest_session_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $guest_id);
+
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to clear guest cart: " . $stmt->error);
+            }
+
+            // Commit transaction
+            $conn->commit();
+
+            return true;
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            if (isset($conn) && $conn->ping()) {
+                $conn->rollback();
+            }
+
+            error_log("Error moving guest cart to order details: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get guest order by email and order ID
+     * @param string $email - Guest email
+     * @param int $order_id - Order ID or invoice number
+     * @return array|bool - Order details if found, false otherwise
+     */
+    public function get_guest_order($email, $order_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            // Try to find by order ID first
+            $sql = "SELECT * FROM orders WHERE guest_email = ? AND (order_id = ? OR invoice_no = ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sii", $email, $order_id, $order_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                return $result->fetch_assoc();
+            }
+
+            return false;
+        } catch (Exception $e) {
+            error_log("Error getting guest order: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get all guest orders by email
+     * @param string $email - Guest email
+     * @return array - Array of orders
+     */
+    public function get_guest_orders_by_email($email)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "SELECT * FROM orders WHERE guest_email = ? ORDER BY order_date DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $orders = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $orders[] = $row;
+            }
+
+            return $orders;
+        } catch (Exception $e) {
+            error_log("Error getting guest orders: " . $e->getMessage());
+            return [];
+        }
+    }
+    /**
+     * Remove product from guest cart
+     * @param int $product_id - Product ID
+     * @param string $guest_id - Guest session ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function remove_from_guest_cart($product_id, $guest_id)
+    {
+        try {
+            $conn = $this->db_conn();
+
+            $sql = "DELETE FROM cart WHERE p_id = ? AND guest_session_id = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare statement failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("is", $product_id, $guest_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Execute statement failed: " . $stmt->error);
+            }
+
+            return $stmt->affected_rows > 0;
+        } catch (Exception $e) {
+            error_log("Error removing from guest cart: " . $e->getMessage());
+            return false;
+        }
+    }
 }

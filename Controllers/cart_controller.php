@@ -297,4 +297,157 @@ class CartController
             return false;
         }
     }
+    /**
+     * Add product to guest cart
+     * @param int $product_id - Product ID
+     * @param string $ip_address - Client IP address
+     * @param string $guest_id - Guest session ID
+     * @param int $quantity - Quantity
+     * @return bool - True if successful, false otherwise
+     */
+    public function add_to_guest_cart_ctr($product_id, $ip_address, $guest_id, $quantity = 1)
+    {
+        try {
+            return $this->cartClass->add_to_guest_cart($product_id, $ip_address, $guest_id, $quantity);
+        } catch (Exception $e) {
+            error_log("Error in add_to_guest_cart_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if product is in guest cart
+     * @param int $product_id - Product ID
+     * @param string $guest_id - Guest session ID
+     * @return bool - True if product is in cart, false otherwise
+     */
+    public function check_product_in_guest_cart_ctr($product_id, $guest_id)
+    {
+        try {
+            return $this->cartClass->check_product_in_guest_cart($product_id, $guest_id);
+        } catch (Exception $e) {
+            error_log("Error in check_product_in_guest_cart_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get guest cart items
+     * @param string $guest_id - Guest session ID
+     * @return array - Array with success status and cart items
+     */
+    public function get_guest_cart_items_ctr($guest_id)
+    {
+        try {
+            $items = $this->cartClass->get_guest_cart_items($guest_id);
+
+            return [
+                'success' => true,
+                'data' => $items
+            ];
+        } catch (Exception $e) {
+            error_log("Error in get_guest_cart_items_ctr: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
+
+    /**
+     * Get guest cart total
+     * @param string $guest_id - Guest session ID
+     * @return float - Cart total
+     */
+    public function get_guest_cart_total_ctr($guest_id)
+    {
+        try {
+            return $this->cartClass->get_guest_cart_total($guest_id);
+        } catch (Exception $e) {
+            error_log("Error in get_guest_cart_total_ctr: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get guest cart count
+     * @param string $guest_id - Guest session ID
+     * @return int - Number of items in cart
+     */
+    public function get_guest_cart_count_ctr($guest_id)
+    {
+        try {
+            return $this->cartClass->get_guest_cart_count($guest_id);
+        } catch (Exception $e) {
+            error_log("Error in get_guest_cart_count_ctr: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Create guest order
+     * @param float $order_amount - Order amount
+     * @param string $invoice_no - Invoice number
+     * @param string $order_status - Order status
+     * @param string $reference - Transaction reference
+     * @param string $guest_email - Guest email
+     * @param string $guest_name - Guest name
+     * @param string $guest_id - Guest session ID
+     * @return int|bool - Order ID if successful, false otherwise
+     */
+    public function create_guest_order_ctr($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id)
+    {
+        try {
+            return $this->cartClass->create_guest_order($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id);
+        } catch (Exception $e) {
+            error_log("Error in create_guest_order_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get guest order by email and order ID
+     * @param string $email - Guest email
+     * @param int $order_id - Order ID or invoice number
+     * @return array|bool - Order details if found, false otherwise
+     */
+    public function get_guest_order_ctr($email, $order_id)
+    {
+        try {
+            return $this->cartClass->get_guest_order($email, $order_id);
+        } catch (Exception $e) {
+            error_log("Error in get_guest_order_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get cart count for display (works for both logged in and guest)
+     * @return int - Number of items in cart
+     */
+    public function get_cart_count_display()
+    {
+        if (is_logged_in()) {
+            return $this->get_cart_count_ctr($_SESSION['customer_id']);
+        } else if (isset($_SESSION['guest_session_id'])) {
+            return $this->get_guest_cart_count_ctr($_SESSION['guest_session_id']);
+        }
+        return 0;
+    }
+    /**
+     * Remove product from guest cart
+     * @param int $product_id - Product ID
+     * @param string $guest_id - Guest session ID
+     * @return bool - True if successful, false otherwise
+     */
+    public function remove_from_guest_cart_ctr($product_id, $guest_id)
+    {
+        try {
+            return $this->cartClass->remove_from_guest_cart($product_id, $guest_id);
+        } catch (Exception $e) {
+            error_log("Error in remove_from_guest_cart_ctr: " . $e->getMessage());
+            return false;
+        }
+    }
 }

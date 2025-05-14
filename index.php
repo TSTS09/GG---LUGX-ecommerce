@@ -106,62 +106,7 @@ $page_title = "GG - LUGX Gaming";
   <!-- ***** Preloader End ***** -->
 
   <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <nav class="main-nav">
-            <!-- Logo -->
-            <a href="index.php" class="logo">
-              <img src="Images/logo.png" alt="GG-LUGX" style="width: 158px;">
-            </a>
-
-            <!-- Main Menu -->
-            <ul class="nav">
-              <?php if (is_logged_in() && is_admin()): ?>
-                <!-- Admin Navigation Menu -->
-                <li><a href="index.php" class="active">Home</a></li>
-                <li><a href="Admin/brand.php">Brands</a></li>
-                <li><a href="Admin/category.php">Categories</a></li>
-                <li><a href="Admin/product.php">Manage Products</a></li>
-                <li><a href="View/orders.php">Orders</a></li>
-                <li><a href="Actions/logout.php">Logout</a></li>
-              <?php elseif (is_logged_in()): ?>
-                <!-- Regular User Navigation Menu -->
-                <li><a href="index.php" class="active">Home</a></li>
-                <li><a href="View/all_product.php">Products</a></li>
-                <li><a href="View/cart.php">
-                    <i class="fa fa-shopping-cart"></i> Cart
-                  </a></li>
-                <li><a href="View/orders.php">My Orders</a></li>
-                <li><a href="View/contact.php">Contact Us</a></li>
-                <li><a href="Actions/logout.php">Logout</a></li>
-              <?php else: ?>
-                <!-- Not Logged In Navigation Menu -->
-                <li><a href="index.php" class="active">Home</a></li>
-                <li><a href="View/all_product.php">Our Shop</a></li>
-                <li><a href="View/contact.php">Contact Us</a></li>
-                <li><a href="Login/login.php">Sign In/Register</a></li>
-              <?php endif; ?>
-
-              <!-- Username display if logged in -->
-              <?php if (is_logged_in()): ?>
-                <li>
-                  <span class="user-greeting">
-                    Hello, <?php echo isset($_SESSION['customer_name']) ? htmlspecialchars($_SESSION['customer_name']) : 'User'; ?>
-                  </span>
-                </li>
-              <?php endif; ?>
-            </ul>
-
-            <a class='menu-trigger'>
-              <span>Menu</span>
-            </a>
-          </nav>
-        </div>
-      </div>
-    </div>
-  </header>
+  <?php include_once('includes/header.php'); ?>
   <!-- ***** Header Area End ***** -->
 
   <div class="main-content">
@@ -514,15 +459,7 @@ $page_title = "GG - LUGX Gaming";
     </div>
   </div>
 
-  <footer>
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-12 text-center">
-          <p>Copyright © 2025 GG - LUGX. All rights reserved. &nbsp;&nbsp; <a rel="nofollow" href="https://templatemo.com" target="_blank">Design: TemplateMo</a></p>
-        </div>
-      </div>
-    </div>
-  </footer>
+  <?php include_once('includes/header.php'); ?>
 
   <!-- Scripts -->
   <script src="JS/jquery/jquery.min.js"></script>

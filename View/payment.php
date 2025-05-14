@@ -4,30 +4,49 @@ require_once("../Setting/core.php");
 require_once("../Controllers/cart_controller.php");
 require_once("../Controllers/customer_controller.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php?redirect=payment");
+// Handle both logged in and guest users
+if (is_logged_in()) {
+    $customer_id = $_SESSION['customer_id'];
+    $guest_checkout = false;
+
+    // Get customer details
+    $customer_controller = new CustomerController();
+    $customer = $customer_controller->get_one_customer_ctr($customer_id);
+    $email = $customer['customer_email'];
+
+    // Create cart controller instance
+    $cart_controller = new CartController();
+
+    // Get cart items
+    $cart_items = $cart_controller->get_cart_items_ctr($customer_id);
+
+    // Get cart total
+    $cart_total = $cart_controller->get_cart_total_ctr($customer_id);
+} else if (isset($_SESSION['guest_checkout']) && isset($_SESSION['guest_session_id'])) {
+    // Handle guest users with checkout info
+    $customer_id = null;
+    $guest_checkout = true;
+    $guest_details = $_SESSION['guest_checkout'];
+    $guest_id = $_SESSION['guest_session_id'];
+    $email = $guest_details['email'];
+
+    // Create cart controller instance
+    $cart_controller = new CartController();
+
+    // Get guest cart items
+    $cart_items = $cart_controller->get_guest_cart_items_ctr($guest_id);
+
+    // Get guest cart total
+    $cart_total = $cart_controller->get_guest_cart_total_ctr($guest_id);
+} else {
+    // If neither logged in nor guest checkout, redirect to appropriate page
+    header("Location: guest_checkout.php");
     exit;
 }
 
-// Get customer ID from session
-$customer_id = $_SESSION['customer_id'];
-
-// Create cart controller instance
-$cart_controller = new CartController();
-$customer_controller = new CustomerController();
-
-// Get cart items
-$cart_items = $cart_controller->get_cart_items_ctr($customer_id);
-
-// Get cart total
-$cart_total = $cart_controller->get_cart_total_ctr($customer_id);
-
-// Get customer details
-$customer = $customer_controller->get_one_customer_ctr($customer_id);
-
 // Check if cart is empty
-if (!$cart_items['success'] || empty($cart_items['data'])) {
+if ((!$guest_checkout && (!$cart_items['success'] || empty($cart_items['data']))) || 
+    ($guest_checkout && (!$cart_items['success'] || empty($cart_items['data'])))) {
     header("Location: cart.php");
     exit;
 }

@@ -3,23 +3,28 @@ session_start();
 require_once("../Setting/core.php");
 require_once("../Controllers/cart_controller.php");
 
-// Check if user is logged in
+// Generate or retrieve guest_session_id for non-logged users
 if (!is_logged_in()) {
-    // Redirect to login page with a return URL
-    header("Location: ../Login/login.php?redirect=cart");
-    exit;
-}
+    if (!isset($_SESSION['guest_session_id'])) {
+        $_SESSION['guest_session_id'] = uniqid('guest_', true);
+    }
+    $guest_id = $_SESSION['guest_session_id'];
+    $ip_address = $_SERVER['REMOTE_ADDR'];
+} else {
+    // Check if user is admin - admins should not be able to add to cart
+    if (is_admin()) {
+        $_SESSION['message'] = [
+            'type' => 'error',
+            'text' => 'Admin accounts cannot add products to cart'
+        ];
 
-// Check if user is admin - admins should not be able to add to cart
-if (is_admin()) {
-    $_SESSION['message'] = [
-        'type' => 'error',
-        'text' => 'Admin accounts cannot add products to cart'
-    ];
+        // Redirect back to previous page
+        header("Location: " . ($_SERVER['HTTP_REFERER'] ?? "../View/all_product.php"));
+        exit;
+    }
 
-    // Redirect back to previous page
-    header("Location: " . ($_SERVER['HTTP_REFERER'] ?? "../View/all_product.php"));
-    exit;
+    $customer_id = $_SESSION['customer_id'];
+    $ip_address = $_SERVER['REMOTE_ADDR'];
 }
 
 // Process form data
@@ -44,30 +49,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || isset($_GET['id'])) {
         $quantity = 1; // Set to default if invalid
     }
 
-    // Get customer ID from session
-    $customer_id = $_SESSION['customer_id'];
-
-    // Get client IP address
-    $ip_address = $_SERVER['REMOTE_ADDR'];
-
     // Create cart controller instance
     $cart_controller = new CartController();
 
-    // Check if product is already in cart - only check current cart, not past orders
-    $existing_item = $cart_controller->check_product_in_cart_ctr($product_id, $customer_id);
+    // Process based on user type (logged in or guest)
+    if (is_logged_in()) {
+        // Check if product is already in cart
+        $existing_item = $cart_controller->check_product_in_cart_ctr($product_id, $customer_id);
 
-    if ($existing_item) {
-        // If already in cart, update quantity instead of showing an error
-        $_SESSION['message'] = [
-            'type' => 'info',
-            'text' => 'This product is already in your cart. You can adjust the quantity there.'
-        ];
-        header("Location: ../View/cart.php");
-        exit;
+        if ($existing_item) {
+            // If already in cart, update quantity instead of showing an error
+            $_SESSION['message'] = [
+                'type' => 'info',
+                'text' => 'This product is already in your cart. You can adjust the quantity there.'
+            ];
+            header("Location: ../View/cart.php");
+            exit;
+        }
+
+        // Add product to cart
+        $result = $cart_controller->add_to_cart_ctr($product_id, $ip_address, $customer_id, $quantity);
+    } else {
+        // For guest users
+        $existing_item = $cart_controller->check_product_in_guest_cart_ctr($product_id, $guest_id);
+
+        if ($existing_item) {
+            $_SESSION['message'] = [
+                'type' => 'info',
+                'text' => 'This product is already in your cart. You can adjust the quantity there.'
+            ];
+            header("Location: ../View/cart.php");
+            exit;
+        }
+
+        // Add product to guest cart
+        $result = $cart_controller->add_to_guest_cart_ctr($product_id, $ip_address, $guest_id, $quantity);
     }
-
-    // Add product to cart
-    $result = $cart_controller->add_to_cart_ctr($product_id, $ip_address, $customer_id, $quantity);
 
     if ($result) {
         // Success, redirect to cart page

@@ -1,0 +1,66 @@
+/* Guest Checkout Styles */
+.checkout-container {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 100px auto;
+}
+
+.checkout-form {
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.order-summary {
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+h4 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e7e7e7;
+}
+
+.btn-checkout {
+    background-color: #ee626b;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.btn-checkout:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+
+.form-text {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.table th {
+    background-color: #f2f2f2;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table tfoot {
+    font-weight: bold;
+}
+
+.table tfoot tr:last-child {
+    border-top: 2px solid #dee2e6;
+}

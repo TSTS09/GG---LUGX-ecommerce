@@ -3,23 +3,38 @@ session_start();
 require_once("../Setting/core.php");
 require_once("../Controllers/cart_controller.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php?redirect=cart");
-    exit;
-}
-
-// Get customer ID from session
-$customer_id = $_SESSION['customer_id'];
-
 // Create cart controller instance
 $cart_controller = new CartController();
 
-// Get cart items
-$cart_items = $cart_controller->get_cart_items_ctr($customer_id);
+// Handle both logged in and guest users
+if (is_logged_in()) {
+    // Get customer ID from session
+    $customer_id = $_SESSION['customer_id'];
 
-// Get cart total
-$cart_total = $cart_controller->get_cart_total_ctr($customer_id);
+    // Get cart items
+    $cart_items = $cart_controller->get_cart_items_ctr($customer_id);
+
+    // Get cart total
+    $cart_total = $cart_controller->get_cart_total_ctr($customer_id);
+
+    // User is logged in
+    $is_guest = false;
+} else {
+    // For guest users
+    if (!isset($_SESSION['guest_session_id'])) {
+        $_SESSION['guest_session_id'] = uniqid('guest_', true);
+    }
+    $guest_id = $_SESSION['guest_session_id'];
+
+    // Get guest cart items
+    $cart_items = $cart_controller->get_guest_cart_items_ctr($guest_id);
+
+    // Get guest cart total
+    $cart_total = $cart_controller->get_guest_cart_total_ctr($guest_id);
+
+    // User is guest
+    $is_guest = true;
+}
 ?>
 
 <!DOCTYPE html>
@@ -65,7 +80,7 @@ $cart_total = $cart_controller->get_cart_total_ctr($customer_id);
                 </div>
             </div>
 
-            <?php if ($cart_items['success'] && !empty($cart_items['data'])): ?>
+            <?php if (($is_guest ? $cart_items['success'] && !empty($cart_items['data']) : $cart_items['success'] && !empty($cart_items['data']))): ?>
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="cart-table">
@@ -136,9 +151,16 @@ $cart_total = $cart_controller->get_cart_total_ctr($customer_id);
                                 <a href="all_product.php" class="btn btn-secondary btn-continue-shopping">
                                     <i class="fa fa-arrow-left"></i> Continue Shopping
                                 </a>
-                                <a href="payment.php" class="btn btn-checkout">
-                                    Proceed to Checkout <i class="fa fa-arrow-right"></i>
-                                </a>
+
+                                <?php if ($is_guest): ?>
+                                    <a href="guest_checkout.php" class="btn btn-checkout">
+                                        Proceed to Checkout <i class="fa fa-arrow-right"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="payment.php" class="btn btn-checkout">
+                                        Proceed to Checkout <i class="fa fa-arrow-right"></i>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

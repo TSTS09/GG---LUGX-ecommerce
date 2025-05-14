@@ -4,21 +4,29 @@ require_once("../Setting/core.php");
 require_once("../Controllers/cart_controller.php");
 require_once("../Controllers/customer_controller.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php?redirect=cart");
+// Handle both logged in and guest users
+if (is_logged_in()) {
+    $customer_id = $_SESSION['customer_id'];
+    $guest_checkout = false;
+
+    // Get customer details
+    $customer_controller = new CustomerController();
+    $customer = $customer_controller->get_one_customer_ctr($customer_id);
+    $email = $customer['customer_email'];
+} else if (isset($_SESSION['guest_checkout']) && isset($_SESSION['guest_session_id'])) {
+    $customer_id = null;
+    $guest_checkout = true;
+    $guest_details = $_SESSION['guest_checkout'];
+    $guest_id = $_SESSION['guest_session_id'];
+    $email = $guest_details['email'];
+} else {
+    // Redirect if neither logged in nor guest checkout
+    header("Location: ../View/cart.php");
     exit;
 }
 
-// Get customer ID from session
-$customer_id = $_SESSION['customer_id'];
-
-// Create controllers
+// Create cart controller instance
 $cart_controller = new CartController();
-$customer_controller = new CustomerController();
-
-// Get customer details
-$customer = $customer_controller->get_one_customer_ctr($customer_id);
 
 // Check for direct redirect from Paystack (success case)
 if (isset($_GET['reference']) && isset($_GET['trxref'])) {
@@ -26,19 +34,18 @@ if (isset($_GET['reference']) && isset($_GET['trxref'])) {
     $reference = $_GET['reference'];
     $transaction_id = $reference; // In this case, use reference as transaction ID
     $status = 'success'; // Assume success as Paystack redirects here on success
-    
+
     error_log("Received direct Paystack redirect with reference: $reference");
-} 
+}
 // Check for our standard parameters
 else if (isset($_GET['reference']) && isset($_GET['transaction_id']) && isset($_GET['status'])) {
     // This is our manually structured path 
     $reference = $_GET['reference'];
     $transaction_id = $_GET['transaction_id'];
     $status = $_GET['status'];
-    
+
     error_log("Received standard payment callback with reference: $reference, transaction_id: $transaction_id, status: $status");
-} 
-else {
+} else {
     // Set error message if required parameters are missing
     error_log("Missing required payment parameters in callback");
     $_SESSION['payment_error'] = "Invalid payment data received";
@@ -47,7 +54,7 @@ else {
 }
 
 // Verify payment with PayStack API
-$paystack_secret_key = "sk_test_75041253ce1c9538bcf1e5a634d10d2bef5299f7"; 
+$paystack_secret_key = "sk_test_75041253ce1c9538bcf1e5a634d10d2bef5299f7";
 $verification_url = "https://api.paystack.co/transaction/verify/" . rawurlencode($reference);
 
 // Log the verification request
@@ -99,18 +106,18 @@ if ($result && isset($result->status) && $result->status === true) {
 // Deeper error checking if verification seems to have failed
 if (!$verification_successful) {
     $error_message = "Payment verification failed";
-    
+
     if (isset($result->message)) {
         $error_message .= ": " . $result->message;
     }
-    
+
     if (isset($result->data) && isset($result->data->gateway_response)) {
         $error_message .= " - " . $result->data->gateway_response;
     }
-    
+
     error_log("Paystack verification failed: " . $error_message);
     error_log("Full response: " . $response);
-    
+
     // Check for potential success despite different response format
     if ($result && isset($result->data) && isset($result->data->reference) && $result->data->reference === $reference) {
         error_log("Transaction reference matches despite apparent failure, continuing with processing");
@@ -149,10 +156,10 @@ $invoice_no = "INV-" . mt_rand(1000000, 9999999);
 $existing_orders = $cart_controller->get_orders_by_reference_ctr($reference);
 if ($existing_orders && !empty($existing_orders)) {
     error_log("Order already exists for reference: $reference, redirecting to success page");
-    
+
     $order_id = $existing_orders[0]['order_id'];
     $invoice_no = $existing_orders[0]['invoice_no'];
-    
+
     // Store order details in session for success page
     $_SESSION['order_id'] = $order_id;
     $_SESSION['invoice_no'] = $invoice_no;
@@ -160,14 +167,34 @@ if ($existing_orders && !empty($existing_orders)) {
     $_SESSION['ghs_amount'] = $paid_amount_ghs;
     $_SESSION['payment_date'] = isset($existing_orders[0]['order_date']) ? $existing_orders[0]['order_date'] : date('Y-m-d H:i:s');
     $_SESSION['exchange_rate'] = $exchange_rate;
-    
+
     // Redirect to success page
     header("Location: ../View/payment_success.php");
     exit;
 }
 
-// Create order using the USD amount for internal consistency
-$order_id = $cart_controller->create_order_ctr($customer_id, $usd_total, $invoice_no, 'Completed', $reference);
+// Create order based on user type
+if ($guest_checkout) {
+    // For guest users
+    $order_id = $cart_controller->create_guest_order_ctr(
+        $usd_total,
+        $invoice_no,
+        'Completed',
+        $reference,
+        $guest_details['email'],
+        $guest_details['name'],
+        $guest_id
+    );
+} else {
+    // For logged in users
+    $order_id = $cart_controller->create_order_ctr(
+        $customer_id,
+        $usd_total,
+        $invoice_no,
+        'Completed',
+        $reference
+    );
+}
 
 if (!$order_id) {
     error_log("Failed to create order in the database");
@@ -187,13 +214,13 @@ if (!$payment_recorded) {
 }
 
 // Send order confirmation email to customer
-$to = $customer['customer_email'];
+$to = $email;
 $subject = "Order Confirmation - " . $invoice_no;
 
 // Get order items
 $order_items = $cart_controller->get_order_items_ctr($order_id);
 
-// Build email body
+// Build email body - simplified for this implementation
 $email_body = "
 <html>
 <head>
@@ -218,13 +245,9 @@ $email_body = "
             <p>Thank you for your order!</p>
         </div>
         <div class='content'>
-            <p>Dear " . $customer['customer_name'] . ",</p>
-            <p>Your order has been received and is now being processed. Here are your order details:</p>
-            
             <p><strong>Order Number:</strong> " . $invoice_no . "</p>
             <p><strong>Order Date:</strong> " . date('F j, Y') . "</p>
             <p><strong>Payment Method:</strong> " . $payment_method . "</p>
-            <p><strong>Transaction ID:</strong> " . $transaction_id . "</p>
             
             <div class='currency-note'>
                 <p>Your payment of GH₵" . number_format($paid_amount_ghs, 2) . " was processed in Ghanaian Cedis.</p>
@@ -243,7 +266,7 @@ $email_body = "
                 </thead>
                 <tbody>";
 
-// Add order items
+// Add order items to the email
 if ($order_items['success'] && !empty($order_items['data'])) {
     foreach ($order_items['data'] as $item) {
         $email_body .= "
@@ -270,7 +293,6 @@ $email_body .= "
                 </tfoot>
             </table>
             
-            <p>If you have any questions, please contact our customer support.</p>
             <p>Thank you for shopping with us!</p>
         </div>
         <div class='footer'>

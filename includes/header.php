@@ -59,6 +59,11 @@ function isActive($page_name)
     }
     return '';
 }
+
+// Get cart count for display
+require_once(__DIR__ . "/../Controllers/cart_controller.php");
+$cart_controller = new CartController();
+$cart_count = $cart_controller->get_cart_count_display();
 ?>
 
 <!-- Header Area Start -->
@@ -87,7 +92,11 @@ function isActive($page_name)
                             <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
                             <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Products</a></li>
                             <li><a href="<?php echo $base_url; ?>View/cart.php" <?php echo isActive('cart'); ?>>
-                                    <i class="fa fa-shopping-cart"></i> Cart
+                                    <i class="fa fa-shopping-cart <?php echo ($cart_count > 0) ? 'filled' : 'empty'; ?>"></i>
+                                    <?php if ($cart_count > 0): ?>
+                                        <span class="cart-badge"><?php echo $cart_count; ?></span>
+                                    <?php endif; ?>
+                                    Cart
                                 </a></li>
                             <li><a href="<?php echo $base_url; ?>View/orders.php" <?php echo isActive('orders'); ?>>My Orders</a></li>
                             <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
@@ -96,6 +105,14 @@ function isActive($page_name)
                             <!-- Not Logged In Navigation Menu -->
                             <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
                             <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Shop</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/cart.php" <?php echo isActive('cart'); ?>>
+                                    <i class="fa fa-shopping-cart <?php echo ($cart_count > 0) ? 'filled' : 'empty'; ?>"></i>
+                                    <?php if ($cart_count > 0): ?>
+                                        <span class="cart-badge"><?php echo $cart_count; ?></span>
+                                    <?php endif; ?>
+                                    Cart
+                                </a></li>
+                            <li><a href="<?php echo $base_url; ?>View/track_order.php">Track Order</a></li>
                             <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>Login/login.php" <?php echo isActive('login'); ?>>Sign In/Register</a></li>
                         <?php endif; ?>
@@ -108,7 +125,6 @@ function isActive($page_name)
                                 </span>
                             </li>
                         <?php endif; ?>
-                    </ul>
                     </ul>
 
                     <a class='menu-trigger'>
