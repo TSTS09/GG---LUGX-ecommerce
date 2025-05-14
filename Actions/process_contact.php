@@ -2,7 +2,7 @@
 // Include core file for session management and authentication functions
 require_once("../Setting/core.php");
 
-// Create directories for logs and PHPMailer if they don't exist
+// Create directory for logs if it doesn't exist
 if (!file_exists('../Error')) {
     mkdir('../Error', 0755, true);
 }
@@ -12,7 +12,7 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', '../Error/contact_form_errors.log');
 
-
+// Include PHPMailer classes
 require '../PHPMailer/PHPMailer-master/src/Exception.php';
 require '../PHPMailer/PHPMailer-master/src/PHPMailer.php';
 require '../PHPMailer/PHPMailer-master/src/SMTP.php';
@@ -82,83 +82,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Record the submission in the log for verification
             error_log("Contact form submitted by $email on $date_time: SAVED TO BACKUP FILE");
 
-            // Try to send email if PHPMailer is available
-            if ($phpmailer_exists) {
-                try {
-                    // Create a new PHPMailer instance
-                    $mail = new PHPMailer(true); // Passing `true` enables exceptions
+            // Try to send email with PHPMailer
+            try {
+                // Create a new PHPMailer instance
+                $mail = new PHPMailer(true); // Passing `true` enables exceptions
 
-                    // Server settings - basic local settings that will work in most environments
-                    $mail->isSMTP();
-                    $mail->Host = 'localhost';
-                    $mail->SMTPAuth = false;
-                    $mail->Port = 25;
+                // Server settings - MODIFY THESE WITH YOUR ACTUAL SMTP SETTINGS
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';  
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'sekaletchio@gmail.com'; 
+                $mail->Password   = 'npio bjol fmfn jxgy ';    
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
 
-                    // Set email format to HTML
-                    $mail->isHTML(true);
+                // Recipients
+                $mail->setFrom('noreply@gg-lugx.com', 'GG-LUGX Contact Form');
+                $mail->addAddress('sekaletchio@gmail.com', 'GG-LUGX Admin'); // Replace with recipient email
+                $mail->addReplyTo($email, "$name $surname");
 
-                    // Sender and recipient
-                    $mail->setFrom('noreply@gg-lugx.com', 'GG-LUGX Contact Form');
-                    $mail->addAddress('sekaletchio@gmail.com', 'GG-LUGX Admin');
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = "Contact Form: $subject - $date_time";
 
-                    // Set email subject with date and time
-                    $mail->Subject = "Contact Form: $subject - $date_time";
-
-                    // Build email message in HTML
-                    $mail->Body = "admin@example.com
-                        <html>
-                        <head>
-                            <style>
-                                body { font-family: Arial, sans-serif; line-height: 1.6; }
-                                .container { width: 100%; max-width: 600px; margin: 0 auto; }
-                                .header { background-color: #f8f8f8; padding: 20px; border-bottom: 3px solid #ee626b; }
-                                .content { padding: 20px; }
-                                .footer { background-color: #f8f8f8; padding: 20px; font-size: 12px; text-align: center; }
-                                h1 { color: #ee626b; }
-                                .label { font-weight: bold; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class='container'>
-                                <div class='header'>
-                                    <h1>New Contact Form Message</h1>
-                                </div>
-                                <div class='content'>
-                                    <p><span class='label'>Name:</span> $name $surname</p>
-                                    <p><span class='label'>Email:</span> $email</p>
-                                    <p><span class='label'>Subject:</span> $subject</p>
-                                    <p><span class='label'>Message:</span></p>
-                                    <p>" . nl2br($message) . "</p>
-                                </div>
-                                <div class='footer'>
-                                    This message was sent from the GG-LUGX contact form on $date_time
-                                </div>
+                // Build email message in HTML
+                $mail->Body = "
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; }
+                            .container { width: 100%; max-width: 600px; margin: 0 auto; }
+                            .header { background-color: #f8f8f8; padding: 20px; border-bottom: 3px solid #ee626b; }
+                            .content { padding: 20px; }
+                            .footer { background-color: #f8f8f8; padding: 20px; font-size: 12px; text-align: center; }
+                            h1 { color: #ee626b; }
+                            .label { font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class='container'>
+                            <div class='header'>
+                                <h1>New Contact Form Message</h1>
                             </div>
-                        </body>
-                        </html>
-                    ";
+                            <div class='content'>
+                                <p><span class='label'>Name:</span> $name $surname</p>
+                                <p><span class='label'>Email:</span> $email</p>
+                                <p><span class='label'>Subject:</span> $subject</p>
+                                <p><span class='label'>Message:</span></p>
+                                <p>" . nl2br($message) . "</p>
+                            </div>
+                            <div class='footer'>
+                                This message was sent from the GG-LUGX contact form on $date_time
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                ";
 
-                    // Plain text alternative
-                    $mail->AltBody = "Name: $name $surname\nEmail: $email\nSubject: $subject\nMessage: $message";
+                // Plain text alternative
+                $mail->AltBody = "Name: $name $surname\nEmail: $email\nSubject: $subject\nMessage: $message";
 
-                    // Try to send the email
-                    $mail->send();
+                // Log attempt
+                error_log("Attempting to send email for contact form from $email");
 
-                    // Log successful email sending
-                    error_log("Contact form email sent successfully for $email");
+                // Try to send the email
+                $mail->send();
 
-                    // Set success message regardless of email success, since backup was created
-                    $_SESSION['contact_success'] = "Thank you for your message! We've received it and will get back to you soon.";
-                } catch (Exception $e) {
-                    // Log email sending failure
-                    error_log("Failed to send email for contact form from $email: " . $mail->ErrorInfo);
+                // Log successful email sending
+                error_log("Contact form email sent successfully for $email");
 
-                    // Still show success since the backup file was created
-                    $_SESSION['contact_success'] = "Thank you for your message! We've received it and will get back to you soon.";
-                }
-            } else {
-                // PHPMailer not available, but backup file was created
-                error_log("Email not sent for contact form from $email: PHPMailer not available");
+                // Set success message
+                $_SESSION['contact_success'] = "Thank you for your message! We've received it and will get back to you soon.";
+            } catch (Exception $e) {
+                // Log email sending failure
+                error_log("Failed to send email for contact form from $email: " . $mail->ErrorInfo);
 
                 // Still show success since the backup file was created
                 $_SESSION['contact_success'] = "Thank you for your message! We've received it and will get back to you soon.";
