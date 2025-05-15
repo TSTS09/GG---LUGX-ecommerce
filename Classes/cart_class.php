@@ -481,14 +481,20 @@ class CartClass extends db_connection
             $order = $order_result->fetch_assoc();
 
             // For guest orders, use 0 as customer_id
-            $customer_id = $order['customer_id'] ?? 0;
+            $customer_id = $order['customer_id'];
 
             // Insert payment with customer_id (can be 0 for guests)
-            $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_date, ghs_amount, exchange_rate) 
+            if ($customer_id === NULL) {
+                $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_date, ghs_amount, exchange_rate) 
+                VALUES (?, NULL, ?, ?, NOW(), ?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("disdd", $amount, $order_id, $currency, $ghs_amount, $exchange_rate);
+            } else {
+                $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_date, ghs_amount, exchange_rate) 
                 VALUES (?, ?, ?, ?, NOW(), ?, ?)";
-
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("diisdd", $amount, $customer_id, $order_id, $currency, $ghs_amount, $exchange_rate);
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("diisdd", $amount, $customer_id, $order_id, $currency, $ghs_amount, $exchange_rate);
+            }            
 
             if (!$stmt->execute()) {
                 error_log("Payment insert failed: " . $stmt->error);

@@ -186,6 +186,10 @@ class BundleClass extends db_connection
 
             // Process each product
             foreach ($product_ids as $key => $product_id) {
+                // Ensure quantities is an array with default values
+                if (empty($quantities) || !is_array($quantities)) {
+                    $quantities = array_fill(0, count($product_ids), 1);
+                }
                 $discount = $discounts[$key] ?? 0;
                 $quantity = $quantities[$key] ?? 1; // Default quantity to 1 if not specified
 

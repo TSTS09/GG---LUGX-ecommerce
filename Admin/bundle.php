@@ -270,6 +270,10 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
         document.getElementById('bundle_price').addEventListener('input', function() {
             updatePricing();
         });
+        // Initialize all dropdowns
+        $(document).ready(function() {
+            $('.dropdown-toggle').dropdown();
+        });
     </script>
 </body>
 

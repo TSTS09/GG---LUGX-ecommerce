@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $bundle_price,
         $bundle_desc,
         $image_path,
-        $bundle_keywords, 
+        $bundle_keywords,
     );
 
     if ($update_product_result) {
@@ -129,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $delete_items_result = $bundle_controller->delete_bundle_items_ctr($bundle_id);
 
         // Then add new items
-        $add_items_result = $bundle_controller->add_bundle_items_ctr($bundle_id, $product_ids, $discounts);
+        $add_items_result = $bundle_controller->add_bundle_items_ctr($bundle_id, $product_ids, $discounts, $quantities);
 
         if ($add_items_result) {
             $_SESSION['message'] = ['type' => 'success', 'text' => 'Bundle updated successfully'];

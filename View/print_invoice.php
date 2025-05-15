@@ -2,12 +2,6 @@
 session_start();
 require_once("../Setting/core.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php?redirect=orders");
-    exit;
-}
-
 // Check if order ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: orders.php");
