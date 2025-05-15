@@ -95,34 +95,36 @@ $cart_count = $cart_controller->get_cart_count_display();
                         <?php elseif (is_logged_in()): ?>
                             <!-- Regular User Navigation Menu -->
                             <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Products</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Shop</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Bundles</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>View/cart.php" <?php echo isActive('cart'); ?>>
                                     <i class="fa fa-shopping-cart <?php echo ($cart_count > 0) ? 'filled' : 'empty'; ?>"></i>
                                     <?php if ($cart_count > 0): ?>
                                         <span class="cart-badge"><?php echo $cart_count; ?></span>
                                     <?php endif; ?>
-                                    Cart
                                 </a></li>
-                            <li><a href="<?php echo $base_url; ?>View/orders.php" <?php echo isActive('orders'); ?>>My Orders</a></li>
                             <li><a href="<?php echo $base_url; ?>View/wishlist.php" <?php echo isActive('wishlist'); ?>>
                                     <i class="fa fa-heart <?php echo ($wishlist_count > 0) ? 'text-danger' : ''; ?>"></i>
                                     <?php if ($wishlist_count > 0): ?>
                                         <span class="wishlist-badge"><?php echo $wishlist_count; ?></span>
                                     <?php endif; ?>
                                 </a></li>
-                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Game Bundles</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>Actions/logout.php">Logout</a></li>
+
                         <?php else: ?>
                             <!-- Not Logged In Navigation Menu -->
                             <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
                             <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Shop</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Bundles</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/track_order.php">Track Order</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>View/cart.php" <?php echo isActive('cart'); ?>>
                                     <i class="fa fa-shopping-cart <?php echo ($cart_count > 0) ? 'filled' : 'empty'; ?>"></i>
                                     <?php if ($cart_count > 0): ?>
                                         <span class="cart-badge"><?php echo $cart_count; ?></span>
                                     <?php endif; ?>
-                                    Cart
                                 </a></li>
                             <li><a href="<?php echo $base_url; ?>View/wishlist.php" <?php echo isActive('wishlist'); ?>>
                                     <i class="fa fa-heart <?php echo ($wishlist_count > 0) ? 'text-danger' : ''; ?>"></i>
@@ -130,11 +132,8 @@ $cart_count = $cart_controller->get_cart_count_display();
                                         <span class="wishlist-badge"><?php echo $wishlist_count; ?></span>
                                     <?php endif; ?>
                                 </a></li>
-                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Game Bundles</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/track_order.php">Track Order</a></li>
-
-                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>Login/login.php" <?php echo isActive('login'); ?>>Sign In/Register</a></li>
+
                         <?php endif; ?>
 
                         <!-- Username display if logged in -->

@@ -7,13 +7,13 @@ require_once("../Controllers/cart_controller.php");
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'] ?? '';
     $order_id = $_POST['order_id'] ?? '';
-    
+
     if (empty($email) || empty($order_id)) {
         $error = "Please provide both email and order ID";
     } else {
         $cart_controller = new CartController();
         $order = $cart_controller->get_guest_order_ctr($email, $order_id);
-        
+
         if ($order) {
             // Store order in session for viewing
             $_SESSION['tracked_order'] = $order;
@@ -42,6 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="../CSS/templatemo-lugx-gaming.css">
     <link rel="stylesheet" href="../CSS/owl.css">
     <link rel="stylesheet" href="../CSS/animate.css">
+    <link rel="stylesheet" href="../CSS/guest_tracking.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
     <link rel="icon" href="../Images/logo.png" type="image/png">
 </head>
@@ -51,33 +52,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php include_once('../includes/header.php'); ?>
 
     <div class="main-content">
-        <div class="container mt-5 mb-5">
+        <div class="tracking-container">
             <div class="row justify-content-center">
-                <div class="col-md-8">
+                <div class="col-md-10">
                     <div class="card">
                         <div class="card-header bg-primary text-white">
-                            <h4 class="mb-0">Track Your Order</h4>
+                            <h4 class="tracking-title mb-0">Track Your Order</h4>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body tracking-form">
                             <?php if (isset($error)): ?>
                                 <div class="alert alert-danger">
                                     <?php echo $error; ?>
                                 </div>
                             <?php endif; ?>
-                            
+
                             <p>Enter the email address you used during checkout and your order ID or invoice number to track your order.</p>
-                            
+
                             <form method="POST" action="">
                                 <div class="form-group mb-3">
                                     <label for="email">Email Address</label>
                                     <input type="email" class="form-control" id="email" name="email" required>
                                 </div>
-                                
+
                                 <div class="form-group mb-3">
                                     <label for="order_id">Order ID or Invoice Number</label>
                                     <input type="text" class="form-control" id="order_id" name="order_id" required>
                                 </div>
-                                
+
                                 <button type="submit" class="btn btn-primary">Track Order</button>
                             </form>
                         </div>

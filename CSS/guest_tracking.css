@@ -1,0 +1,41 @@
+/* Add to CSS/track_order.css or incorporate into an existing CSS file */
+.tracking-container {
+    max-width: 800px;
+    margin: 120px auto 50px;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.tracking-form {
+    padding: 25px;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    margin-bottom: 20px;
+}
+
+.tracking-title {
+    color: #060505;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.tracking-input {
+    margin-bottom: 20px;
+}
+
+.tracking-button {
+    background-color: #060505;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.tracking-button:hover {
+    background-color: #060505;
+    transform: translateY(-2px);
+}
