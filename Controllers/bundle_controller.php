@@ -11,38 +11,15 @@ class BundleController
     }
 
     // Create new bundle
+    // In bundle_controller.php
     public function create_bundle_ctr($title, $price, $description, $image, $keywords, $product_ids, $discounts)
     {
         try {
             // Log method call
-            error_log("create_bundle_ctr called with:");
-            error_log("Title: $title");
-            error_log("Price: $price");
-            error_log("Description: $description");
-            error_log("Image: $image");
-            error_log("Keywords: $keywords");
-            error_log("Product IDs: " . implode(",", $product_ids));
-
-            // Sanitize and validate inputs
-            $title = htmlspecialchars($title);
-            $price = (float)$price;
-            $description = htmlspecialchars($description);
-            $keywords = htmlspecialchars($keywords);
-
-            // Make sure product_ids is an array
-            if (!is_array($product_ids) || empty($product_ids)) {
-                error_log("Invalid product_ids: must be a non-empty array");
-                return false;
-            }
-
-            // Make sure discounts is an array matching product_ids
-            if (!is_array($discounts) || count($discounts) != count($product_ids)) {
-                error_log("Invalid discounts array: creating default zero discounts");
-                $discounts = array_fill(0, count($product_ids), 0);
-            }
+            error_log("create_bundle_ctr called");
 
             // Call the bundle class method
-            $result = $this->bundleClass->create_bundle(
+            return $this->bundleClass->create_bundle(
                 $title,
                 $price,
                 $description,
@@ -51,16 +28,8 @@ class BundleController
                 $product_ids,
                 $discounts
             );
-
-            if ($result) {
-                error_log("Bundle created successfully with ID: $result");
-            } else {
-                error_log("Bundle creation failed");
-            }
-
-            return $result;
         } catch (Exception $e) {
-            error_log("Exception in create_bundle_ctr: " . $e->getMessage());
+            error_log("Error in create_bundle_ctr: " . $e->getMessage());
             return false;
         }
     }

@@ -2,6 +2,8 @@
 session_start();
 require_once("../Setting/core.php");
 require_once("../Controllers/bundle_controller.php");
+require_once("../Controllers/product_controller.php");
+
 
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
@@ -29,10 +31,10 @@ if (!is_logged_in() || !is_admin()) {
     header("Location: ../Login/login.php");
     exit;
 }
-// Include the product controller for price validation
-require_once("../Controllers/product_controller.php");
-$product_controller = new ProductController();
 
+// Create controller instances
+$bundle_controller = new BundleController();
+$product_controller = new ProductController();
 // Process form data
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Enable detailed error reporting

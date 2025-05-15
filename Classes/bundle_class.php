@@ -7,75 +7,45 @@ class BundleClass extends db_connection
     public function create_bundle($title, $price, $description, $image, $keywords, $product_ids, $discounts)
     {
         try {
-            // Get database connection
             $conn = $this->db_conn();
-
-            // Make sure we have a connection
-            if (!$conn) {
-                error_log("Database connection failed in create_bundle");
-                return false;
-            }
 
             // Start transaction
             $conn->begin_transaction();
 
-            // Log what we're about to do
-            error_log("Creating bundle in database: Title=$title, Price=$price");
-
-            // Let's try a different approach - use direct query first to verify SQL
+            // Use direct query for the product insertion
             $sql = "INSERT INTO products (product_cat, product_brand, product_title, product_price, product_desc, product_image, product_keywords, is_bundle) 
-               VALUES (1, 1, '$title', $price, '$description', '$image', '$keywords', 1)";
+               VALUES (1, 1, ?, ?, ?, ?, ?, 1)";
 
-            error_log("Executing SQL: $sql");
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sdsss", $title, $price, $description, $image, $keywords);
 
-            $result = $conn->query($sql);
-            if (!$result) {
-                // Log the error and rollback
-                error_log("SQL Error: " . $conn->error);
-                $conn->rollback();
-                return false;
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to create bundle: " . $stmt->error);
             }
 
-            // Get the inserted bundle ID
             $bundle_id = $conn->insert_id;
-            error_log("Bundle product created with ID: $bundle_id");
 
-            // Now add the bundle items
-            $success = true;
+            // Add bundle items
             foreach ($product_ids as $key => $product_id) {
                 $discount = isset($discounts[$key]) ? $discounts[$key] : 0;
 
-                // Directly execute the SQL for bundle items
-                $bundle_sql = "INSERT INTO bundle_items (bundle_id, product_id, discount_percent) 
-                           VALUES ($bundle_id, $product_id, $discount)";
+                $insert_sql = "INSERT INTO bundle_items (bundle_id, product_id, discount_percent) VALUES (?, ?, ?)";
+                $item_stmt = $conn->prepare($insert_sql);
+                $item_stmt->bind_param("iid", $bundle_id, $product_id, $discount);
 
-                error_log("Executing bundle item SQL: $bundle_sql");
-
-                if (!$conn->query($bundle_sql)) {
-                    error_log("Failed to add bundle item: " . $conn->error);
-                    $success = false;
-                    break;
+                if (!$item_stmt->execute()) {
+                    $conn->rollback();
+                    throw new Exception("Failed to add bundle item: " . $item_stmt->error);
                 }
             }
 
-            // If any item failed, rollback the transaction
-            if (!$success) {
-                error_log("Rolling back transaction due to failed item insertion");
-                $conn->rollback();
-                return false;
-            }
-
-            // Commit the transaction
             $conn->commit();
-            error_log("Transaction committed successfully. Bundle ID: $bundle_id");
             return $bundle_id;
         } catch (Exception $e) {
-            // Rollback on error
             if (isset($conn) && $conn->ping()) {
                 $conn->rollback();
             }
-
-            error_log("Exception in create_bundle: " . $e->getMessage());
+            error_log("Error creating bundle: " . $e->getMessage());
             return false;
         }
     }
