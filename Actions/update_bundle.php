@@ -33,6 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $bundle_keywords = trim($_POST['bundle_keywords']);
     $product_ids = $_POST['product_ids'];
     $discounts = isset($_POST['discounts']) ? $_POST['discounts'] : array_fill(0, count($product_ids), 0);
+    $quantities = isset($_POST['quantities']) && is_array($_POST['quantities']) ? $_POST['quantities'] : array_fill(0, count($product_ids), 1);
 
     // Calculate the total price of all selected products
     $total_original_price = 0;
@@ -120,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $bundle_price,
         $bundle_desc,
         $image_path,
-        $bundle_keywords
+        $bundle_keywords, 
     );
 
     if ($update_product_result) {

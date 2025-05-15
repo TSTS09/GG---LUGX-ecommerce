@@ -102,6 +102,9 @@ $related_products = $product_controller->get_products_by_category_ctr($product['
                             <label for="quantity" class="quantity-label">Quantity:</label>
                             <input type="number" name="quantity" id="quantity" class="quantity-input" value="1" min="1" max="10">
                         </div>
+                        <?php if ($item['quantity'] > 1): ?>
+                            <span class="badge badge-info"><?php echo $item['quantity']; ?>×</span>
+                        <?php endif; ?>
                         <!-- Wishlist button -->
                         <a href="../Actions/add_to_wishlist.php?id=<?php echo $product['product_id']; ?>" class="btn btn-secondary mr-2">
                             <i class="fa fa-heart"></i> Add to Wishlist

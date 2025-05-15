@@ -28,44 +28,44 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
     <link rel="stylesheet" href="../CSS/animate.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
     <link rel="icon" href="../Images/logo.png" type="image/png">
-    
+
     <style>
         .bundle-container {
             padding: 30px;
             max-width: 1200px;
             margin: 100px auto;
         }
-        
+
         .bundle-card {
             margin-bottom: 30px;
             border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
         }
-        
+
         .bundle-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
         }
-        
+
         .bundle-image {
             height: 250px;
             width: 100%;
             object-fit: cover;
         }
-        
+
         .bundle-body {
             padding: 20px;
         }
-        
+
         .bundle-items {
             margin-top: 15px;
             padding: 15px;
             background-color: #f8f9fa;
             border-radius: 10px;
         }
-        
+
         .bundle-item {
             display: flex;
             align-items: center;
@@ -73,13 +73,13 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
             padding-bottom: 10px;
             border-bottom: 1px solid #e9ecef;
         }
-        
+
         .bundle-item:last-child {
             margin-bottom: 0;
             padding-bottom: 0;
             border-bottom: none;
         }
-        
+
         .bundle-item img {
             width: 60px;
             height: 60px;
@@ -87,20 +87,20 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
             border-radius: 5px;
             margin-right: 15px;
         }
-        
+
         .bundle-item-price {
             margin-left: auto;
             text-decoration: line-through;
             color: #6c757d;
         }
-        
+
         .bundle-savings {
             color: #28a745;
             font-weight: bold;
             margin-top: 15px;
             font-size: 18px;
         }
-        
+
         .bundle-price {
             color: #ee626b;
             font-size: 24px;
@@ -119,7 +119,7 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
             <div class="col-lg-12">
                 <h2 class="mb-4">Game Bundles</h2>
                 <p class="mb-5">Save big with our carefully curated game bundles! Get multiple games at a discounted price.</p>
-                
+
                 <?php if (isset($_SESSION['message'])): ?>
                     <div class="alert alert-<?php echo $_SESSION['message']['type']; ?> alert-dismissible fade show" role="alert">
                         <?php echo $_SESSION['message']['text']; ?>
@@ -138,22 +138,22 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                     <div class="col-lg-6 mb-4">
                         <div class="bundle-card">
                             <img src="<?php echo $bundle['product_image']; ?>" alt="<?php echo $bundle['product_title']; ?>" class="bundle-image">
-                            
+
                             <div class="bundle-body">
                                 <h3><?php echo $bundle['product_title']; ?></h3>
                                 <p><?php echo $bundle['product_desc']; ?></p>
-                                
+
                                 <div class="bundle-price">
                                     $<?php echo number_format($bundle['product_price'], 2); ?>
                                 </div>
-                                
+
                                 <?php if (!empty($bundle['items'])): ?>
                                     <div class="bundle-items">
                                         <h5>Bundle Includes:</h5>
-                                        
-                                        <?php 
+
+                                        <?php
                                         $total_original = 0;
-                                        foreach ($bundle['items'] as $item): 
+                                        foreach ($bundle['items'] as $item):
                                             $total_original += $item['product_price'];
                                         ?>
                                             <div class="bundle-item">
@@ -166,23 +166,25 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
-                                        
+
                                         <?php
                                         $savings = $total_original - $bundle['product_price'];
                                         $savings_percent = ($savings / $total_original) * 100;
                                         ?>
-                                        
+
                                         <div class="bundle-savings">
                                             Save $<?php echo number_format($savings, 2); ?> (<?php echo round($savings_percent); ?>%)
                                         </div>
                                     </div>
                                 <?php endif; ?>
-                                
+                                <?php if ($item['quantity'] > 1): ?>
+                                    <span class="badge badge-info"><?php echo $item['quantity']; ?>×</span>
+                                <?php endif; ?>
                                 <div class="mt-4">
                                     <a href="../Actions/add_to_cart.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-primary btn-lg">
                                         <i class="fa fa-shopping-cart"></i> Add Bundle to Cart
                                     </a>
-                                    
+
                                     <?php if (is_logged_in() || !isset($bundle['is_preorder']) || $bundle['is_preorder'] != 1): ?>
                                         <a href="../Actions/add_to_wishlist.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-outline-secondary ml-2">
                                             <i class="fa fa-heart"></i> Add to Wishlist
