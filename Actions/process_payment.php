@@ -183,7 +183,9 @@ if ($guest_checkout) {
         $reference,
         $guest_details['email'],
         $guest_details['name'],
-        $guest_id
+        $guest_id,
+        $guest_details['phone'] ?? null,    // Add this line
+        $guest_details['address'] ?? null   // Add this line
     );
 } else {
     // For logged in users

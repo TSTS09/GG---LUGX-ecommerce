@@ -3,12 +3,6 @@ session_start();
 require_once("../Setting/core.php");
 require_once("../Controllers/cart_controller.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php");
-    exit;
-}
-
 // Check if order data is available
 if (!isset($_SESSION['order_id']) || !isset($_SESSION['invoice_no']) || !isset($_SESSION['amount'])) {
     header("Location: ../index.php");

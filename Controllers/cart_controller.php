@@ -396,10 +396,10 @@ class CartController
      * @param string $guest_id - Guest session ID
      * @return int|bool - Order ID if successful, false otherwise
      */
-    public function create_guest_order_ctr($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id)
+    public function create_guest_order_ctr($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id, $guest_phone = null, $guest_address = null)
     {
         try {
-            return $this->cartClass->create_guest_order($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id);
+            return $this->cartClass->create_guest_order($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id, $guest_phone, $guest_address);
         } catch (Exception $e) {
             error_log("Error in create_guest_order_ctr: " . $e->getMessage());
             return false;

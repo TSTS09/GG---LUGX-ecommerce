@@ -45,28 +45,37 @@ if (is_logged_in()) {
 }
 
 // Check if cart is empty
-if ((!$guest_checkout && (!$cart_items['success'] || empty($cart_items['data']))) || 
-    ($guest_checkout && (!$cart_items['success'] || empty($cart_items['data'])))) {
+if ((!$guest_checkout && (!$cart_items['success'] || empty($cart_items['data']))) ||
+    ($guest_checkout && (!$cart_items['success'] || empty($cart_items['data'])))
+) {
     header("Location: cart.php");
     exit;
 }
 
 // Initialize PayStack integration
-$paystack_public_key = "pk_test_942e4174c8bdc335aed436d07ba8c9ee1eda6831"; 
-$email = $customer['customer_email'];
+$paystack_public_key = "pk_test_942e4174c8bdc335aed436d07ba8c9ee1eda6831";
 $reference = 'ORD_' . time() . '_' . mt_rand(1000, 9999);
+
+// Validate email format to avoid PayStack errors
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    // Email is invalid, show error
+    $_SESSION['payment_error'] = "Invalid email address. Please go back and provide a valid email.";
+    header("Location: ../View/payment_failed.php");
+    exit;
+}
 
 // Currency conversion from USD to GHS
 // First, try to get the current exchange rate from an API
-function get_exchange_rate() {
+function get_exchange_rate()
+{
     // Default exchange rate in case API fails (1 USD = 12.5 GHS as an example)
     $default_rate = 12.5;
-    
+
     try {
         // Try with ExchangeRate-API (free tier)
         $api_url = "https://open.er-api.com/v6/latest/USD";
         $response = @file_get_contents($api_url);
-        
+
         if ($response !== false) {
             $data = json_decode($response, true);
             if (isset($data['rates']['GHS'])) {
@@ -74,11 +83,11 @@ function get_exchange_rate() {
                 return $data['rates']['GHS'];
             }
         }
-        
+
         // Try with alternative API if first one fails
         $backup_api = "https://api.exchangerate.host/latest?base=USD&symbols=GHS";
         $backup_response = @file_get_contents($backup_api);
-        
+
         if ($backup_response !== false) {
             $backup_data = json_decode($backup_response, true);
             if (isset($backup_data['rates']['GHS'])) {
@@ -86,7 +95,7 @@ function get_exchange_rate() {
                 return $backup_data['rates']['GHS'];
             }
         }
-        
+
         // If APIs fail, log the error and return default rate
         error_log("Could not get exchange rate from APIs, using default rate: 1 USD = " . $default_rate . " GHS");
         return $default_rate;
@@ -152,7 +161,7 @@ $currency = "GHS";
                 <div class="col-lg-8">
                     <div class="order-summary">
                         <h4>Order Summary</h4>
-                        
+
                         <div class="table-responsive">
                             <table class="table">
                                 <thead>
@@ -198,7 +207,7 @@ $currency = "GHS";
                                 </tfoot>
                             </table>
                         </div>
-                        
+
                         <div class="currency-info">
                             <p><i class="fa fa-info-circle"></i> <strong>Currency Conversion:</strong> Your payment will be processed in Ghanaian Cedis (GHS). Current exchange rate: 1 USD = <?php echo number_format($exchange_rate, 2); ?> GHS</p>
                         </div>
@@ -208,25 +217,34 @@ $currency = "GHS";
                 <div class="col-lg-4">
                     <div class="payment-details">
                         <h4>Customer Details</h4>
-                        
+
                         <div class="mb-3">
-                            <p><strong>Name:</strong> <?php echo $customer['customer_name']; ?></p>
-                            <p><strong>Email:</strong> <?php echo $customer['customer_email']; ?></p>
-                            <p><strong>Contact:</strong> <?php echo $customer['customer_contact']; ?></p>
-                            <p><strong>Country:</strong> <?php echo $customer['customer_country']; ?></p>
-                            <p><strong>City:</strong> <?php echo $customer['customer_city']; ?></p>
+                            <?php if ($guest_checkout): ?>
+                                <!-- Guest checkout info -->
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($guest_details['name']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($guest_details['email']); ?></p>
+                                <p><strong>Contact:</strong> <?php echo htmlspecialchars($guest_details['phone']); ?></p>
+                                <p><strong>Address:</strong> <?php echo htmlspecialchars($guest_details['address']); ?></p>
+                            <?php else: ?>
+                                <!-- Registered user info -->
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($customer['customer_name']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($customer['customer_email']); ?></p>
+                                <p><strong>Contact:</strong> <?php echo htmlspecialchars($customer['customer_contact']); ?></p>
+                                <p><strong>Country:</strong> <?php echo htmlspecialchars($customer['customer_country']); ?></p>
+                                <p><strong>City:</strong> <?php echo htmlspecialchars($customer['customer_city']); ?></p>
+                            <?php endif; ?>
                         </div>
-                        
+
                         <div class="divider"></div>
-                        
+
                         <div class="payment-method">
                             <h4>Payment Method</h4>
                             <p>Pay securely via PayStack</p>
-                            
+
                             <div class="mt-3">
                                 <button type="button" class="btn btn-pay" onclick="payWithPaystack()">Pay Now GH₵<?php echo number_format($ghs_total, 2); ?></button>
                             </div>
-                            
+
                             <div class="mt-3">
                                 <a href="cart.php" class="btn btn-secondary btn-sm">
                                     <i class="fa fa-arrow-left"></i> Back to Cart
@@ -245,18 +263,18 @@ $currency = "GHS";
     <!-- PayStack Integration -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
     <script>
-        function payWithPaystack(){
+        function payWithPaystack() {
             var handler = PaystackPop.setup({
                 key: '<?php echo $paystack_public_key; ?>',
-                email: '<?php echo $email; ?>',
+                email: '<?php echo filter_var($email, FILTER_SANITIZE_EMAIL); ?>', // Ensure the email is properly sanitized
                 amount: <?php echo $amount; ?>,
                 currency: '<?php echo $currency; ?>',
                 ref: '<?php echo $reference; ?>',
-                callback: function(response){
+                callback: function(response) {
                     // Redirect to process payment
                     window.location.href = "../Actions/process_payment.php?reference=" + response.reference + "&transaction_id=" + response.transaction + "&status=" + response.status;
                 },
-                onClose: function(){
+                onClose: function() {
                     alert('Transaction was not completed, window closed.');
                 },
             });

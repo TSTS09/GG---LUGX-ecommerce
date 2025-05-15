@@ -868,16 +868,17 @@ class CartClass extends db_connection
      * @param string $guest_id - Guest session ID
      * @return int|bool - Order ID if successful, false otherwise
      */
-    public function create_guest_order($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id)
+    public function create_guest_order($order_amount, $invoice_no, $order_status, $reference, $guest_email, $guest_name, $guest_id, $guest_phone = null, $guest_address = null)
     {
         try {
             $conn = $this->db_conn();
 
-            $sql = "INSERT INTO orders (customer_id, guest_email, guest_name, invoice_no, order_date, order_status, order_amount, reference) 
-                   VALUES (NULL, ?, ?, ?, NOW(), ?, ?, ?)";
+            $sql = "INSERT INTO orders (customer_id, guest_email, guest_name, guest_phone, guest_address, invoice_no, order_date, order_status, order_amount, reference) 
+               VALUES (NULL, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)";
 
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ssisss", $guest_email, $guest_name, $invoice_no, $order_status, $order_amount, $reference);
+            $stmt->bind_param("sssssiss", $guest_email, $guest_name, $guest_phone, $guest_address, $invoice_no, $order_status, $order_amount, $reference);
+
 
             if (!$stmt->execute()) {
                 error_log("Failed to create guest order: " . $stmt->error);

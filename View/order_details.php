@@ -219,12 +219,21 @@ $page_title = "Order Details #" . $order_id;
 
             <div class="row">
                 <div class="col-md-6">
-                    <div class="section-title">Customer Information</div>
+                    <h6>Customer Information</h6>
                     <?php if ($customer): ?>
                         <p><strong>Name:</strong> <?php echo htmlspecialchars($customer['customer_name']); ?></p>
                         <p><strong>Email:</strong> <?php echo htmlspecialchars($customer['customer_email']); ?></p>
-                        <p><strong>Contact:</strong> <?php echo htmlspecialchars($customer['customer_contact']); ?></p>
+                        <p><strong>Phone:</strong> <?php echo htmlspecialchars($customer['customer_contact']); ?></p>
                         <p><strong>Location:</strong> <?php echo htmlspecialchars($customer['customer_city'] . ', ' . $customer['customer_country']); ?></p>
+                    <?php elseif (isset($order['guest_email']) && !empty($order['guest_email'])): ?>
+                        <p><strong>Name:</strong> <?php echo htmlspecialchars($order['guest_name'] ?? 'Guest User'); ?></p>
+                        <p><strong>Email:</strong> <?php echo htmlspecialchars($order['guest_email']); ?> (Guest User)</p>
+                        <?php if (isset($order['guest_phone']) && !empty($order['guest_phone'])): ?>
+                            <p><strong>Phone:</strong> <?php echo htmlspecialchars($order['guest_phone']); ?></p>
+                        <?php endif; ?>
+                        <?php if (isset($order['guest_address']) && !empty($order['guest_address'])): ?>
+                            <p><strong>Address:</strong> <?php echo htmlspecialchars($order['guest_address']); ?></p>
+                        <?php endif; ?>
                     <?php else: ?>
                         <p>Customer details not available</p>
                     <?php endif; ?>

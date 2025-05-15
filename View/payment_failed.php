@@ -2,12 +2,6 @@
 session_start();
 require_once("../Setting/core.php");
 
-// Check if user is logged in
-if (!is_logged_in()) {
-    header("Location: ../Login/login.php");
-    exit;
-}
-
 // Get error message if available
 $error_message = isset($_SESSION['payment_error']) ? $_SESSION['payment_error'] : "There was an issue processing your payment.";
 ?>

@@ -35,6 +35,7 @@ if (!function_exists('is_logged_in')) {
     }
 }
 
+
 // Determine base URL for links and image paths
 $base_url = '';
 if (strpos($_SERVER['PHP_SELF'], '/Admin/') !== false) {
@@ -59,6 +60,9 @@ function isActive($page_name)
     }
     return '';
 }
+require_once(__DIR__ . "/../Controllers/wishlist_controller.php");
+$wishlist_controller = new WishlistController();
+$wishlist_count = $wishlist_controller->get_wishlist_count_display();
 
 // Get cart count for display
 require_once(__DIR__ . "/../Controllers/cart_controller.php");
@@ -86,6 +90,7 @@ $cart_count = $cart_controller->get_cart_count_display();
                             <li><a href="<?php echo $base_url; ?>Admin/category.php" <?php echo isActive('category'); ?>>Categories</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/product.php" <?php echo isActive('product'); ?>>Manage Products</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
+                            <li><a href="<?php echo $base_url; ?>Admin/bundle.php" <?php echo isActive('bundles'); ?>>bundles</a></li>
                             <li><a href="<?php echo $base_url; ?>Actions/logout.php">Logout</a></li>
                         <?php elseif (is_logged_in()): ?>
                             <!-- Regular User Navigation Menu -->
@@ -99,6 +104,13 @@ $cart_count = $cart_controller->get_cart_count_display();
                                     Cart
                                 </a></li>
                             <li><a href="<?php echo $base_url; ?>View/orders.php" <?php echo isActive('orders'); ?>>My Orders</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/wishlist.php" <?php echo isActive('wishlist'); ?>>
+                                    <i class="fa fa-heart <?php echo ($wishlist_count > 0) ? 'text-danger' : ''; ?>"></i>
+                                    <?php if ($wishlist_count > 0): ?>
+                                        <span class="wishlist-badge"><?php echo $wishlist_count; ?></span>
+                                    <?php endif; ?>
+                                </a></li>
+                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Game Bundles</a></li>
                             <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>Actions/logout.php">Logout</a></li>
                         <?php else: ?>
@@ -112,7 +124,15 @@ $cart_count = $cart_controller->get_cart_count_display();
                                     <?php endif; ?>
                                     Cart
                                 </a></li>
+                            <li><a href="<?php echo $base_url; ?>View/wishlist.php" <?php echo isActive('wishlist'); ?>>
+                                    <i class="fa fa-heart <?php echo ($wishlist_count > 0) ? 'text-danger' : ''; ?>"></i>
+                                    <?php if ($wishlist_count > 0): ?>
+                                        <span class="wishlist-badge"><?php echo $wishlist_count; ?></span>
+                                    <?php endif; ?>
+                                </a></li>
+                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Game Bundles</a></li>
                             <li><a href="<?php echo $base_url; ?>View/track_order.php">Track Order</a></li>
+
                             <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
                             <li><a href="<?php echo $base_url; ?>Login/login.php" <?php echo isActive('login'); ?>>Sign In/Register</a></li>
                         <?php endif; ?>

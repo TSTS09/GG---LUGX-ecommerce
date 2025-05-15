@@ -262,6 +262,9 @@ $current_tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
                                                     <?php if ($customer): ?>
                                                         <?php echo htmlspecialchars($customer['customer_name']); ?><br>
                                                         <small><?php echo htmlspecialchars($customer['customer_email']); ?></small>
+                                                    <?php elseif (isset($order['guest_email']) && !empty($order['guest_email'])): ?>
+                                                        <?php echo htmlspecialchars($order['guest_name'] ?? 'Guest User'); ?><br>
+                                                        <small><?php echo htmlspecialchars($order['guest_email']); ?> (Guest)</small>
                                                     <?php else: ?>
                                                         ID: <?php echo $order['customer_id']; ?><br>
                                                         <small class="text-muted">Customer details not found</small>

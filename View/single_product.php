@@ -95,18 +95,35 @@ $related_products = $product_controller->get_products_by_category_ctr($product['
                 </div>
 
                 <?php if (!is_admin()): ?>
-                <form action="../Actions/add_to_cart.php" method="POST">
-                    <input type="hidden" name="product_id" value="<?php echo $product['product_id']; ?>">
+                    <form action="../Actions/add_to_cart.php" method="POST">
+                        <input type="hidden" name="product_id" value="<?php echo $product['product_id']; ?>">
 
-                    <div class="quantity-selector">
-                        <label for="quantity" class="quantity-label">Quantity:</label>
-                        <input type="number" name="quantity" id="quantity" class="quantity-input" value="1" min="1" max="10">
-                    </div>
+                        <div class="quantity-selector">
+                            <label for="quantity" class="quantity-label">Quantity:</label>
+                            <input type="number" name="quantity" id="quantity" class="quantity-input" value="1" min="1" max="10">
+                        </div>
+                        <!-- Wishlist button -->
+                        <a href="../Actions/add_to_wishlist.php?id=<?php echo $product['product_id']; ?>" class="btn btn-secondary mr-2">
+                            <i class="fa fa-heart"></i> Add to Wishlist
+                        </a>
 
-                    <button type="submit" class="btn btn-add-to-cart">
-                        <i class="fa fa-shopping-cart"></i> Add to Cart
-                    </button>
-                </form>
+                        <!-- Pre-order warning if applicable -->
+                        <?php if (isset($product['is_preorder']) && $product['is_preorder'] == 1): ?>
+                            <?php if (is_logged_in()): ?>
+                                <p class="preorder-notice mt-2">
+                                    <i class="fa fa-calendar"></i> This is a pre-order item. Release date: <?php echo date('F j, Y', strtotime($product['release_date'])); ?>
+                                </p>
+                            <?php else: ?>
+                                <p class="preorder-notice mt-2 text-warning">
+                                    <i class="fa fa-exclamation-triangle"></i> This is a pre-order item. Please <a href="../Login/login.php?redirect=product&id=<?php echo $product['product_id']; ?>">login</a> to pre-order.
+                                </p>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
+                        <button type="submit" class="btn btn-add-to-cart">
+                            <i class="fa fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    </form>
                 <?php endif; ?>
 
                 <div class="mt-4">
