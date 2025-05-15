@@ -204,7 +204,7 @@ $products = $product_controller->get_all_products_ctr();
     <!-- Scripts -->
     <script src="../JS/jquery/jquery.min.js"></script>
     <script src="../JS/bootstrap/js/bootstrap.min.js"></script>
-    <script src="../JS/bundle.js"></script>
+    <script src="../JS/bundle_2.js"></script>
 
     <script>
         // Keep track of selected products and their prices
