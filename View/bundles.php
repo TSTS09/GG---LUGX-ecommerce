@@ -28,7 +28,7 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
     <link rel="stylesheet" href="../CSS/animate.css">
     <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css" />
     <link rel="icon" href="../Images/logo.png" type="image/png">
-    <link rel="stylesheet" href="../CSS/user_bundle.css">
+    <link rel="stylesheet" href="../CSS/user_bundles.css">
 </head>
 
 <body>

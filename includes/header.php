@@ -90,15 +90,15 @@ $cart_count = $cart_controller->get_cart_count_display();
                             <li><a href="<?php echo $base_url; ?>Admin/category.php" <?php echo isActive('category'); ?>>Categories</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/product.php" <?php echo isActive('product'); ?>>Manage Products</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
-                            <li><a href="<?php echo $base_url; ?>Admin/bundle.php" <?php echo isActive('bundles'); ?>>bundles</a></li>
+                            <li><a href="<?php echo $base_url; ?>Admin/bundle.php" <?php echo isActive('Bundle'); ?>>Bundle</a></li>
                             <li><a href="<?php echo $base_url; ?>Actions/logout.php">Logout</a></li>
                         <?php elseif (is_logged_in()): ?>
                             <!-- Regular User Navigation Menu -->
                             <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
                             <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Shop</a></li>
                             <li><a href="<?php echo $base_url; ?>View/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Bundles</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Deals</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact</a></li>
                             <li><a href="<?php echo $base_url; ?>View/cart.php" <?php echo isActive('cart'); ?>>
                                     <i class="fa fa-shopping-cart <?php echo ($cart_count > 0) ? 'filled' : 'empty'; ?>"></i>
                                     <?php if ($cart_count > 0): ?>
@@ -117,9 +117,9 @@ $cart_count = $cart_controller->get_cart_count_display();
                             <!-- Not Logged In Navigation Menu -->
                             <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
                             <li><a href="<?php echo $base_url; ?>View/all_product.php" <?php echo isActive('all_product'); ?>>Shop</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Bundles</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/bundles.php" <?php echo isActive('bundles'); ?>>Deals</a></li>
                             <li><a href="<?php echo $base_url; ?>View/track_order.php">Track Order</a></li>
-                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact Us</a></li>
+                            <li><a href="<?php echo $base_url; ?>View/contact.php" <?php echo isActive('contact'); ?>>Contact</a></li>
                             <li><a href="<?php echo $base_url; ?>View/cart.php" <?php echo isActive('cart'); ?>>
                                     <i class="fa fa-shopping-cart <?php echo ($cart_count > 0) ? 'filled' : 'empty'; ?>"></i>
                                     <?php if ($cart_count > 0): ?>

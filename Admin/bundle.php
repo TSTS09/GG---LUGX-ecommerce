@@ -182,7 +182,34 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <a href="../View/single_product.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-sm btn-info" target="_blank">View</a>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-info dropdown-toggle" type="button" id="bundleProducts<?php echo $bundle['product_id']; ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                            View Products
+                                                        </button>
+                                                        <div class="dropdown-menu" aria-labelledby="bundleProducts<?php echo $bundle['product_id']; ?>">
+                                                            <?php if (!empty($bundle['items'])): ?>
+                                                                <h6 class="dropdown-header">Bundle Products (<?php echo count($bundle['items']); ?>)</h6>
+                                                                <?php foreach ($bundle['items'] as $item): ?>
+                                                                    <div class="dropdown-item">
+                                                                        <div class="d-flex align-items-center">
+                                                                            <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" style="width: 30px; height: 30px; object-fit: cover; margin-right: 10px; border-radius: 4px;">
+                                                                            <div>
+                                                                                <strong><?php echo $item['product_title']; ?></strong>
+                                                                                <div class="small text-muted">
+                                                                                    $<?php echo number_format($item['product_price'], 2); ?>
+                                                                                    <?php if ($item['quantity'] > 1): ?>
+                                                                                        × <?php echo $item['quantity']; ?>
+                                                                                    <?php endif; ?>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endforeach; ?>
+                                                            <?php else: ?>
+                                                                <div class="dropdown-item">No products in this bundle</div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
                                                     <a href="edit_bundle.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
                                                     <a href="../Actions/delete_product.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this bundle?')">Delete</a>
                                                 </td>
@@ -243,8 +270,6 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
         document.getElementById('bundle_price').addEventListener('input', function() {
             updatePricing();
         });
-
-       
     </script>
 </body>
 
