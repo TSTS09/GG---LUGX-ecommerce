@@ -469,48 +469,39 @@ class CartClass extends db_connection
     public function record_payment($order_id, $payment_method, $amount, $currency, $transaction_id, $ghs_amount = 0, $exchange_rate = 0)
     {
         try {
-            // Establish a fresh database connection
+            // Establish database connection
             $conn = $this->db_conn();
 
-            // Exit early with detailed error if connection fails
-            if (!$conn) {
-                error_log("Database connection failed in record_payment");
-                return false;
-            }
+            // Get order info to check if it's a guest order
+            $order_sql = "SELECT customer_id, guest_email FROM orders WHERE order_id = ?";
+            $order_stmt = $conn->prepare($order_sql);
+            $order_stmt->bind_param("i", $order_id);
+            $order_stmt->execute();
+            $order_result = $order_stmt->get_result();
+            $order = $order_result->fetch_assoc();
 
-            // Log debug info
-            error_log("Recording payment: order_id=$order_id, amount=$amount, currency=$currency");
+            // For guest orders, use 0 as customer_id
+            $customer_id = $order['customer_id'] ?? 0;
 
-            // Get customer_id from the order using direct query to avoid connection issues
-            $customer_id = 0;
-            $get_customer_query = "SELECT customer_id FROM orders WHERE order_id = $order_id";
-            $result = mysqli_query($conn, $get_customer_query);
-
-            if ($result && $row = mysqli_fetch_assoc($result)) {
-                $customer_id = $row['customer_id'];
-            } else {
-                error_log("Failed to get customer_id for order $order_id");
-                return false;
-            }
-
-            // Do direct query insertion instead of prepared statement to simplify
+            // Insert payment with customer_id (can be 0 for guests)
             $sql = "INSERT INTO payment (amt, customer_id, order_id, currency, payment_date, ghs_amount, exchange_rate) 
-                VALUES ($amount, $customer_id, $order_id, '$currency', NOW(), $ghs_amount, $exchange_rate)";
+                VALUES (?, ?, ?, ?, NOW(), ?, ?)";
 
-            error_log("Executing SQL: $sql");
-            $insert_result = mysqli_query($conn, $sql);
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("diisdd", $amount, $customer_id, $order_id, $currency, $ghs_amount, $exchange_rate);
 
-            if (!$insert_result) {
-                error_log("Payment insert failed: " . mysqli_error($conn));
+            if (!$stmt->execute()) {
+                error_log("Payment insert failed: " . $stmt->error);
                 return false;
             }
 
-            // Update order status using direct query
-            $update_sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = $order_id";
-            $update_result = mysqli_query($conn, $update_sql);
+            // Update order status
+            $update_sql = "UPDATE orders SET order_status = 'Completed' WHERE order_id = ?";
+            $update_stmt = $conn->prepare($update_sql);
+            $update_stmt->bind_param("i", $order_id);
 
-            if (!$update_result) {
-                error_log("Order status update failed: " . mysqli_error($conn));
+            if (!$update_stmt->execute()) {
+                error_log("Order status update failed: " . $update_stmt->error);
                 return false;
             }
 
