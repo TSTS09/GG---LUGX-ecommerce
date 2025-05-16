@@ -209,8 +209,7 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                                 <div class="dropdown-item">No products in this bundle</div>
                                                             <?php endif; ?>
                                                         </div>
-                                                    </div>
-                                                    <a href="edit_bundle.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                                            </div>
                                                     <a href="../Actions/delete_product.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this bundle?')">Delete</a>
                                                 </td>
                                             </tr>
