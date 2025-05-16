@@ -183,7 +183,6 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <!-- Custom implementation that doesn't rely on Bootstrap's dropdown -->
                                                     <div class="custom-dropdown">
                                                         <button class="btn btn-sm btn-info custom-dropdown-toggle" type="button"
                                                             onclick="toggleProductList(<?php echo $bundle['product_id']; ?>)">
@@ -191,7 +190,9 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                         </button>
 
                                                         <div id="productList<?php echo $bundle['product_id']; ?>" class="custom-dropdown-menu" style="display: none;">
-                                                            <div class="dropdown-header p-2">Bundle Products (<?php echo count($bundle['items']); ?>)</div>
+                                                            <div class="dropdown-header">
+                                                                <i class="fa fa-cubes"></i> Bundle Products (<?php echo count($bundle['items']); ?>)
+                                                            </div>
 
                                                             <?php if (!empty($bundle['items'])): ?>
                                                                 <div class="dropdown-items-container">
@@ -201,24 +202,22 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                                         $is_unavailable = isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1;
                                                                         if ($is_unavailable) $unavailable_count++;
                                                                     ?>
-                                                                        <div class="custom-dropdown-item <?php echo $is_unavailable ? 'text-muted' : ''; ?>">
-                                                                            <div class="d-flex">
-                                                                                <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>"
-                                                                                    class="product-thumbnail <?php echo $is_unavailable ? 'unavailable' : ''; ?>">
-                                                                                <div class="product-info">
-                                                                                    <div class="product-title">
-                                                                                        <?php echo $item['product_title']; ?>
-                                                                                        <?php if ($is_unavailable): ?>
-                                                                                            <span class="badge badge-warning">Unavailable</span>
-                                                                                        <?php endif; ?>
-                                                                                    </div>
-                                                                                    <div class="product-price">
-                                                                                        $<?php echo number_format($item['product_price'], 2); ?>
-                                                                                        <?php if (isset($item['quantity']) && $item['quantity'] > 1): ?>
-                                                                                            <span class="quantity-badge">×<?php echo $item['quantity']; ?></span>
-                                                                                        <?php endif; ?>
-                                                                                    </div>
-                                                                                </div>
+                                                                        <div class="custom-dropdown-item <?php echo $is_unavailable ? 'unavailable' : ''; ?>">
+                                                                            <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>"
+                                                                                class="product-thumbnail <?php echo $is_unavailable ? 'unavailable' : ''; ?>">
+                                                                            <div class="product-info">
+                                                                                <span class="product-title">
+                                                                                    <?php echo $item['product_title']; ?>
+                                                                                    <?php if ($is_unavailable): ?>
+                                                                                        <span class="badge badge-warning">Unavailable</span>
+                                                                                    <?php endif; ?>
+                                                                                </span>
+                                                                                <span class="product-price">
+                                                                                    $<?php echo number_format($item['product_price'], 2); ?>
+                                                                                    <?php if (isset($item['quantity']) && $item['quantity'] > 1): ?>
+                                                                                        <span class="quantity-badge">×<?php echo $item['quantity']; ?></span>
+                                                                                    <?php endif; ?>
+                                                                                </span>
                                                                             </div>
                                                                         </div>
                                                                     <?php endforeach; ?>

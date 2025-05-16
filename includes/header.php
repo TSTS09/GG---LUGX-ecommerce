@@ -85,12 +85,12 @@ $cart_count = $cart_controller->get_cart_count_display();
                     <ul class="nav">
                         <?php if (is_logged_in() && is_admin()): ?>
                             <!-- Admin Navigation Menu -->
-                            <li><a href="<?php echo $base_url; ?>index.php" <?php echo isActive('index'); ?>>Home</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/brand.php" <?php echo isActive('brand'); ?>>Brands</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/category.php" <?php echo isActive('category'); ?>>Categories</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/product.php" <?php echo isActive('product'); ?>>Manage Products</a></li>
                             <li><a href="<?php echo $base_url; ?>Admin/orders.php" <?php echo isActive('orders'); ?>>Orders</a></li>
-                            <li><a href="<?php echo $base_url; ?>Admin/bundle.php" <?php echo isActive('Bundle'); ?>>Bundle</a></li>
+                            <li><a href="<?php echo $base_url; ?>Admin/bundle.php" <?php echo isActive('bundle'); ?>>Bundle</a></li>
+                            <li><a href="<?php echo $base_url; ?>Admin/wishlist.php" <?php echo isActive('wislist'); ?>>Wishlist</a></li>
                             <li><a href="<?php echo $base_url; ?>Actions/logout.php">Logout</a></li>
                         <?php elseif (is_logged_in()): ?>
                             <!-- Regular User Navigation Menu -->
