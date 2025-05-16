@@ -36,9 +36,10 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
     <link rel="stylesheet" href="../CSS/fontawesome.css">
     <link rel="stylesheet" href="../CSS/templatemo-lugx-gaming.css">
     <link rel="stylesheet" href="../CSS/admin-styles.css">
+    <link rel="stylesheet" href="../CSS/user_bundles.css">
     <link rel="stylesheet" href="../CSS/admin.css">
     <link rel="icon" href="../Images/logo.png" type="image/png">
-    <link rel="stylesheet" href="../CSS/bundle.css">
+    <link rel="stylesheet" href="../CSS/user_bundles.css">
 </head>
 
 <body>
@@ -182,34 +183,60 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-info dropdown-toggle" type="button" id="bundleProducts<?php echo $bundle['product_id']; ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                            View Products
+                                                    <!-- Custom implementation that doesn't rely on Bootstrap's dropdown -->
+                                                    <div class="custom-dropdown">
+                                                        <button class="btn btn-sm btn-info custom-dropdown-toggle" type="button"
+                                                            onclick="toggleProductList(<?php echo $bundle['product_id']; ?>)">
+                                                            <i class="fa fa-list"></i> View Products
                                                         </button>
-                                                        <div class="dropdown-menu" aria-labelledby="bundleProducts<?php echo $bundle['product_id']; ?>">
+
+                                                        <div id="productList<?php echo $bundle['product_id']; ?>" class="custom-dropdown-menu" style="display: none;">
+                                                            <div class="dropdown-header p-2">Bundle Products (<?php echo count($bundle['items']); ?>)</div>
+
                                                             <?php if (!empty($bundle['items'])): ?>
-                                                                <h6 class="dropdown-header">Bundle Products (<?php echo count($bundle['items']); ?>)</h6>
-                                                                <?php foreach ($bundle['items'] as $item): ?>
-                                                                    <div class="dropdown-item">
-                                                                        <div class="d-flex align-items-center">
-                                                                            <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" style="width: 30px; height: 30px; object-fit: cover; margin-right: 10px; border-radius: 4px;">
-                                                                            <div>
-                                                                                <strong><?php echo $item['product_title']; ?></strong>
-                                                                                <div class="small text-muted">
-                                                                                    $<?php echo number_format($item['product_price'], 2); ?>
-                                                                                    <?php if ($item['quantity'] > 1): ?>
-                                                                                        × <?php echo $item['quantity']; ?>
-                                                                                    <?php endif; ?>
+                                                                <div class="dropdown-items-container">
+                                                                    <?php
+                                                                    $unavailable_count = 0;
+                                                                    foreach ($bundle['items'] as $item):
+                                                                        $is_unavailable = isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1;
+                                                                        if ($is_unavailable) $unavailable_count++;
+                                                                    ?>
+                                                                        <div class="custom-dropdown-item <?php echo $is_unavailable ? 'text-muted' : ''; ?>">
+                                                                            <div class="d-flex">
+                                                                                <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>"
+                                                                                    class="product-thumbnail <?php echo $is_unavailable ? 'unavailable' : ''; ?>">
+                                                                                <div class="product-info">
+                                                                                    <div class="product-title">
+                                                                                        <?php echo $item['product_title']; ?>
+                                                                                        <?php if ($is_unavailable): ?>
+                                                                                            <span class="badge badge-warning">Unavailable</span>
+                                                                                        <?php endif; ?>
+                                                                                    </div>
+                                                                                    <div class="product-price">
+                                                                                        $<?php echo number_format($item['product_price'], 2); ?>
+                                                                                        <?php if (isset($item['quantity']) && $item['quantity'] > 1): ?>
+                                                                                            <span class="quantity-badge">×<?php echo $item['quantity']; ?></span>
+                                                                                        <?php endif; ?>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
+                                                                    <?php endforeach; ?>
+                                                                </div>
+
+                                                                <?php if ($unavailable_count > 0): ?>
+                                                                    <div class="dropdown-footer">
+                                                                        <div class="text-danger">
+                                                                            <i class="fa fa-exclamation-triangle"></i>
+                                                                            <?php echo $unavailable_count; ?> product(s) no longer available
+                                                                        </div>
                                                                     </div>
-                                                                <?php endforeach; ?>
+                                                                <?php endif; ?>
                                                             <?php else: ?>
-                                                                <div class="dropdown-item">No products in this bundle</div>
+                                                                <div class="custom-dropdown-item">No products in this bundle</div>
                                                             <?php endif; ?>
                                                         </div>
-                                                            </div>
+                                                    </div>
                                                     <a href="../Actions/delete_product.php?id=<?php echo $bundle['product_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this bundle?')">Delete</a>
                                                 </td>
                                             </tr>
@@ -233,6 +260,8 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
     <script src="../JS/jquery/jquery.min.js"></script>
     <script src="../JS/bootstrap/js/bootstrap.min.js"></script>
     <script src="../JS/bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="../JS/dropdown.js"></script>
 
     <script>
         // Keep track of selected products and their prices
@@ -268,10 +297,6 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
         // Update bundle price when input changes
         document.getElementById('bundle_price').addEventListener('input', function() {
             updatePricing();
-        });
-        // Initialize all dropdowns
-        $(document).ready(function() {
-            $('.dropdown-toggle').dropdown();
         });
     </script>
 </body>

@@ -1902,44 +1902,6 @@ body {
   position: relative;
 }
 
-/* Add this to your CSS */
-@media (max-width: 768px) {
-  .dropdown-menu {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: 90% !important;
-    max-height: 60vh !important;
-    z-index: 2000 !important;
-  }
-
-  /* Dark overlay behind the dropdown */
-  .dropdown-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1990;
-  }
-}
-
-/* Make sure dropdown items have proper padding and styling */
-.dropdown-item {
-  padding: 10px;
-  white-space: normal;
-  word-wrap: break-word;
-  display: block;
-}
-
-/* Show dropdown on hover for desktop */
-@media (min-width: 769px) {
-  .dropdown:hover .dropdown-menu {
-    display: block;
-  }
-}
 
 .bundle-products {
   max-height: 300px;

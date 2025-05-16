@@ -74,23 +74,48 @@ $bundles = $bundle_controller->get_all_bundles_ctr();
 
                                         <?php
                                         $total_original = 0;
+                                        $unavailable_items = [];
+
                                         foreach ($bundle['items'] as $item):
-                                            $total_original += $item['product_price'];
+                                            // Check if product is available
+                                            $is_unavailable = isset($item['is_product_deleted']) && $item['is_product_deleted'] == 1;
+
+                                            // Only add to total price if product is available
+                                            if (!$is_unavailable) {
+                                                $total_original += $item['product_price'] * ($item['quantity'] ?? 1);
+                                            } else {
+                                                $unavailable_items[] = $item;
+                                            }
                                         ?>
-                                            <div class="bundle-item">
-                                                <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>">
+                                            <div class="bundle-item <?php echo $is_unavailable ? 'unavailable-item' : ''; ?>">
+                                                <img src="<?php echo $item['product_image']; ?>" alt="<?php echo $item['product_title']; ?>" <?php echo $is_unavailable ? 'style="opacity: 0.5;"' : ''; ?>>
                                                 <div>
                                                     <h6><?php echo $item['product_title']; ?></h6>
+                                                    <?php if ($is_unavailable): ?>
+                                                        <span class="unavailable-badge">No longer available</span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="bundle-item-price">
                                                     $<?php echo number_format($item['product_price'], 2); ?>
+                                                    <?php if (isset($item['quantity']) && $item['quantity'] > 1): ?>
+                                                        <span class="quantity-badge">×<?php echo $item['quantity']; ?></span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
 
+                                        <?php if (!empty($unavailable_items)): ?>
+                                            <div class="bundle-unavailable-notice">
+                                                <i class="fa fa-exclamation-triangle"></i>
+                                                <?php echo count($unavailable_items); ?> product(s) in this bundle are no longer available.
+                                                Bundle price has been adjusted accordingly.
+                                            </div>
+                                        <?php endif; ?>
+
                                         <?php
+                                        // Adjusted savings calculation based on available products only
                                         $savings = $total_original - $bundle['product_price'];
-                                        $savings_percent = ($savings / $total_original) * 100;
+                                        $savings_percent = ($total_original > 0) ? ($savings / $total_original) * 100 : 0;
                                         ?>
 
                                         <div class="bundle-savings">

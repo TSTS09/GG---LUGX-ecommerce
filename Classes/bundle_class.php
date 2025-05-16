@@ -98,7 +98,8 @@ class BundleClass extends db_connection
         try {
             $conn = $this->db_conn();
 
-            $sql = "SELECT bi.*, bi.quantity, p.product_title, p.product_price, p.product_image 
+            // Updated SQL to include deleted status from products table
+            $sql = "SELECT bi.*, bi.quantity, p.product_title, p.product_price, p.product_image, p.deleted as is_product_deleted 
                FROM bundle_items bi
                JOIN products p ON bi.product_id = p.product_id
                WHERE bi.bundle_id = ?";
@@ -119,7 +120,6 @@ class BundleClass extends db_connection
             return [];
         }
     }
-
     // Get all bundles
     public function get_all_bundles()
     {
