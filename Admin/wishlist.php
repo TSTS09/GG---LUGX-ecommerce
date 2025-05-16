@@ -17,6 +17,35 @@ $wishlist_controller = new WishlistController();
 $product_controller = new ProductController();
 $customer_controller = new CustomerController();
 
+/**
+ * Get previous period wishlist counts for comparison
+ * @param object $conn Database connection
+ * @param int $days Number of days to look back
+ * @return array Product IDs with previous counts
+ */
+function getPreviousWishlistCounts($conn, $days = 7) {
+    $previous_counts = [];
+    
+    // Get date from X days ago
+    $date = date('Y-m-d', strtotime("-$days days"));
+    
+    // Query wishlist items from before that date
+    $sql = "SELECT p_id, COUNT(*) as count 
+            FROM wishlist 
+            WHERE date_added < '$date' 
+            GROUP BY p_id";
+            
+    $result = $conn->query($sql);
+    
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $previous_counts[$row['p_id']] = $row['count'];
+        }
+    }
+    
+    return $previous_counts;
+}
+
 // Helper function to calculate wishlist analytics
 function getWishlistAnalytics($conn) {
     $analytics = [
@@ -51,16 +80,37 @@ function getWishlistAnalytics($conn) {
         $analytics['products_in_wishlists'] = $row['total'];
     }
 
-    // Most popular products in wishlists
+    // Most popular products in wishlists - excluding deleted products
     $sql = "SELECT w.p_id, p.product_title, p.product_image, p.product_price, COUNT(*) AS count
             FROM wishlist w
             JOIN products p ON w.p_id = p.product_id
+            WHERE p.deleted = 0 OR p.deleted IS NULL
             GROUP BY w.p_id
             ORDER BY count DESC
             LIMIT 10";
     $result = $conn->query($sql);
     while ($row = $result->fetch_assoc()) {
         $analytics['most_popular_products'][] = $row;
+    }
+
+    // Get previous counts for comparison
+    $previous_counts = getPreviousWishlistCounts($conn);
+
+    // Calculate percentage changes for popular products
+    foreach ($analytics['most_popular_products'] as &$product) {
+        $product_id = $product['p_id'];
+        $current_count = $product['count'];
+        $previous_count = isset($previous_counts[$product_id]) ? $previous_counts[$product_id] : 0;
+        
+        // Calculate percentage change
+        if ($previous_count > 0) {
+            $change = (($current_count - $previous_count) / $previous_count) * 100;
+        } else {
+            // If no previous data, consider it 100% new
+            $change = $current_count > 0 ? 100 : 0;
+        }
+        
+        $product['percentage_change'] = round($change, 1);
     }
 
     // Most popular categories in wishlists
@@ -207,6 +257,22 @@ $userTypeData = json_encode([
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <style>
+        .trend-indicator {
+            font-size: 12px;
+            font-weight: bold;
+            padding-left: 5px;
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .trend-neutral {
+            color: #6c757d;
+        }
+    </style>
 </head>
 
 <body>
@@ -323,7 +389,15 @@ $userTypeData = json_encode([
                                     <td>$<?php echo number_format($product['product_price'], 2); ?></td>
                                     <td>
                                         <span class="badge badge-info"><?php echo $product['count']; ?></span>
-                                        <span class="trend-indicator trend-up">+5%</span>
+                                        <?php if (isset($product['percentage_change'])): ?>
+                                            <?php if ($product['percentage_change'] > 0): ?>
+                                                <span class="trend-indicator trend-up">+<?php echo $product['percentage_change']; ?>%</span>
+                                            <?php elseif ($product['percentage_change'] < 0): ?>
+                                                <span class="trend-indicator trend-down"><?php echo $product['percentage_change']; ?>%</span>
+                                            <?php else: ?>
+                                                <span class="trend-indicator trend-neutral">0%</span>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <a href="../View/single_product.php?id=<?php echo $product['p_id']; ?>" class="btn btn-sm btn-primary">View</a>
