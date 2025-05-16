@@ -4,6 +4,10 @@ require_once("../Setting/core.php");
 require_once("../Controllers/bundle_controller.php");
 require_once("../Controllers/product_controller.php");
 
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 // Check if user is logged in and is admin
 if (!is_logged_in() || !is_admin()) {
     header("Location: ../Login/login.php");
@@ -32,28 +36,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $bundle_desc = trim($_POST['bundle_desc']);
     $bundle_keywords = trim($_POST['bundle_keywords']);
     $product_ids = $_POST['product_ids'];
-    $discounts = isset($_POST['discounts']) ? $_POST['discounts'] : array_fill(0, count($product_ids), 0);
+    
+    // Handle discounts and quantities with proper defaults
+    $discounts = isset($_POST['discounts']) && is_array($_POST['discounts']) ? $_POST['discounts'] : array_fill(0, count($product_ids), 0);
     $quantities = isset($_POST['quantities']) && is_array($_POST['quantities']) ? $_POST['quantities'] : array_fill(0, count($product_ids), 1);
+    
+    // Ensure all arrays are the same length
+    if (count($discounts) < count($product_ids)) {
+        $discounts = array_pad($discounts, count($product_ids), 0);
+    }
+    if (count($quantities) < count($product_ids)) {
+        $quantities = array_pad($quantities, count($product_ids), 1);
+    }
 
     // Calculate the total price of all selected products
+    $product_controller = new ProductController();
     $total_original_price = 0;
-    foreach ($product_ids as $product_id) {
+    foreach ($product_ids as $key => $product_id) {
         // Get product details
         $product = $product_controller->get_one_product_ctr($product_id);
         if ($product) {
-            $total_original_price += $product['product_price'];
+            // Get quantity for this product (default to 1)
+            $qty = isset($quantities[$key]) ? (int)$quantities[$key] : 1;
+            if ($qty < 1) $qty = 1; // Ensure minimum quantity is 1
+            
+            $total_original_price += ($product['product_price'] * $qty);
         }
     }
 
     // Check if bundle price is higher than total original price
     if ($bundle_price >= $total_original_price) {
-        $_SESSION['message'] = ['type' => 'error', 'text' => 'Bundle price must be lower than the total price of individual products ($' . number_format($total_original_price, 2) . ')'];
+        $_SESSION['message'] = [
+            'type' => 'error', 
+            'text' => 'Bundle price must be lower than the total price of individual products ($' . 
+                number_format($total_original_price, 2) . ')'
+        ];
         header("Location: ../Admin/edit_bundle.php?id=" . $bundle_id);
         exit;
     }
 
     // Get current bundle info
-    $product_controller = new ProductController();
     $bundle = $product_controller->get_one_product_ctr($bundle_id);
 
     if (!$bundle || !isset($bundle['is_bundle']) || $bundle['is_bundle'] != 1) {
@@ -112,7 +134,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $bundle_controller = new BundleController();
 
     // First update the product details
-    $product_controller = new ProductController();
     $update_product_result = $product_controller->update_product_ctr(
         $bundle_id,
         $bundle['product_cat'], // Keep original category
@@ -121,14 +142,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $bundle_price,
         $bundle_desc,
         $image_path,
-        $bundle_keywords,
+        $bundle_keywords
     );
 
     if ($update_product_result) {
         // Now update bundle items - first delete existing items
         $delete_items_result = $bundle_controller->delete_bundle_items_ctr($bundle_id);
 
-        // Then add new items
+        // Then add new items with quantities
         $add_items_result = $bundle_controller->add_bundle_items_ctr($bundle_id, $product_ids, $discounts, $quantities);
 
         if ($add_items_result) {
