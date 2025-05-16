@@ -240,3 +240,44 @@
 .custom-dropdown-item:last-child {
     border-bottom: none;
 }
+
+.custom-dropdown {
+  position: relative;
+}
+
+.custom-dropdown-menu {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 400px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  overflow: visible;
+}
+
+/* This ensures the dropdown breaks out of any overflow: hidden containers */
+.table-responsive {
+  overflow: visible;
+}
+
+/* Make sure any parent elements also have overflow: visible */
+.card, .card-body {
+  overflow: visible;
+}
+
+/* For smaller screens, position the dropdown to prevent going off-screen */
+@media (max-width: 768px) {
+  .custom-dropdown-menu {
+    left: auto;
+    right: 0;
+  }
+}
+
+/* Optional: add max-height with scrolling if there are many products */
+.dropdown-items-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
