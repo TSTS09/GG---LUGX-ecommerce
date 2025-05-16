@@ -1,42 +1,78 @@
 <?php
 session_start();
 require_once("../Setting/core.php");
+require_once("../Setting/db_class.php");
 
 // Check if order ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: orders.php");
+    header("Location: ../index.php");
     exit;
 }
 
 $order_id = (int)$_GET['id'];
-$customer_id = $_SESSION['customer_id'];
 
-// Include cart controller for better compatibility with order items
-require_once("../Controllers/cart_controller.php");
-require_once("../Controllers/customer_controller.php");
-$cart_controller = new CartController();
-$customer_controller = new CustomerController();
+// Create database connection directly
+$db = new db_connection();
+$conn = $db->db_conn();
 
-// Get order details
-$order_details = $cart_controller->get_order_details_ctr($order_id);
+// Get order details without joining customer table
+$sql = "SELECT * FROM orders WHERE order_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $order_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$order_data = $result->fetch_assoc();
 
-// Verify that the order belongs to this customer
-if (!$order_details['success'] || empty($order_details['data']) || $order_details['data']['customer_id'] != $customer_id) {
-    header("Location: orders.php");
+// If order not found, redirect to index
+if (!$order_data) {
+    header("Location: ../index.php");
     exit;
 }
 
-// Get order data
-$order_data = $order_details['data'];
+// For security check if the user is logged in and the order belongs to them
+if (is_logged_in() && $order_data['customer_id'] !== null) {
+    $customer_id = $_SESSION['customer_id'];
+    if ($order_data['customer_id'] != $customer_id) {
+        // This order doesn't belong to the logged-in user
+        header("Location: ../index.php");
+        exit;
+    }
+}
+
+// Get customer info if customer_id exists
+$customer = null;
+if ($order_data['customer_id']) {
+    $cust_sql = "SELECT * FROM customer WHERE customer_id = ?";
+    $cust_stmt = $conn->prepare($cust_sql);
+    $cust_stmt->bind_param("i", $order_data['customer_id']);
+    $cust_stmt->execute();
+    $cust_result = $cust_stmt->get_result();
+    $customer = $cust_result->fetch_assoc();
+}
 
 // Get order items
-$order_items = $cart_controller->get_order_items_ctr($order_id);
+$items_sql = "SELECT od.*, p.product_title, p.product_price, p.product_image, 
+               (od.qty * p.product_price) as item_total,
+               p.deleted as is_product_deleted
+              FROM orderdetails od 
+              LEFT JOIN products p ON od.product_id = p.product_id 
+              WHERE od.order_id = ?";
+$items_stmt = $conn->prepare($items_sql);
+$items_stmt->bind_param("i", $order_id);
+$items_stmt->execute();
+$items_result = $items_stmt->get_result();
+$order_items = [];
+while ($item = $items_result->fetch_assoc()) {
+    $order_items[] = $item;
+}
 
 // Get payment info
-$payment_info = $cart_controller->get_payment_info_ctr($order_id);
-
-// Get customer info
-$customer = $customer_controller->get_one_customer_ctr($customer_id);
+$payment_sql = "SELECT * FROM payment WHERE order_id = ? LIMIT 1";
+$payment_stmt = $conn->prepare($payment_sql);
+$payment_stmt->bind_param("i", $order_id);
+$payment_stmt->execute();
+$payment_result = $payment_stmt->get_result();
+$payment_info = $payment_result->fetch_assoc();
 
 // Get exchange rate from the payment info or use a default
 $exchange_rate = isset($payment_info['exchange_rate']) ? $payment_info['exchange_rate'] : 12.5;
@@ -61,8 +97,8 @@ $ghs_amount = isset($payment_info['ghs_amount']) ? $payment_info['ghs_amount'] :
 </head>
 
 <body>
-    <div class="container mb-4">
-        <div class="row no-print">
+    <div class="container mb-4 no-print">
+        <div class="row">
             <div class="col-12 text-center mb-4">
                 <button id="downloadPDF" class="btn-download-pdf">Download PDF</button>
                 <button onclick="window.print()" class="btn btn-secondary">Print</button>
@@ -93,8 +129,17 @@ $ghs_amount = isset($payment_info['ghs_amount']) ? $payment_info['ghs_amount'] :
                         <div><strong>Email:</strong> <?php echo htmlspecialchars($customer['customer_email']); ?></div>
                         <div><strong>Contact:</strong> <?php echo htmlspecialchars($customer['customer_contact']); ?></div>
                         <div><strong>Address:</strong> <?php echo htmlspecialchars($customer['customer_city'] . ', ' . $customer['customer_country']); ?></div>
+                    <?php elseif (isset($order_data['guest_email']) && !empty($order_data['guest_email'])): ?>
+                        <div><strong>Name:</strong> <?php echo htmlspecialchars($order_data['guest_name'] ?? 'Guest User'); ?></div>
+                        <div><strong>Email:</strong> <?php echo htmlspecialchars($order_data['guest_email']); ?></div>
+                        <?php if (isset($order_data['guest_phone']) && !empty($order_data['guest_phone'])): ?>
+                            <div><strong>Contact:</strong> <?php echo htmlspecialchars($order_data['guest_phone']); ?></div>
+                        <?php endif; ?>
+                        <?php if (isset($order_data['guest_address']) && !empty($order_data['guest_address'])): ?>
+                            <div><strong>Address:</strong> <?php echo htmlspecialchars($order_data['guest_address']); ?></div>
+                        <?php endif; ?>
                     <?php else: ?>
-                        <div><strong>Customer ID:</strong> <?php echo $customer_id; ?></div>
+                        <div><strong>Guest Order</strong></div>
                     <?php endif; ?>
                 </div>
                 <div class="col-sm-6 text-right">
@@ -128,8 +173,8 @@ $ghs_amount = isset($payment_info['ghs_amount']) ? $payment_info['ghs_amount'] :
             <tbody>
                 <?php
                 $subtotal = 0;
-                if ($order_items['success'] && !empty($order_items['data'])):
-                    foreach ($order_items['data'] as $item):
+                if (!empty($order_items)):
+                    foreach ($order_items as $item):
                         $item_total = $item['product_price'] * $item['qty'];
                         $subtotal += $item_total;
                 ?>
@@ -178,7 +223,7 @@ $ghs_amount = isset($payment_info['ghs_amount']) ? $payment_info['ghs_amount'] :
                 <div class="invoice-details-title">Payment Information</div>
                 <?php if ($payment_info): ?>
                     <div><strong>Payment Method:</strong> <?php echo $payment_info['payment_method'] ?? 'Online Payment'; ?></div>
-                    <div><strong>Transaction ID:</strong> <?php echo $payment_info['transaction_id'] ?? '-'; ?></div>
+                    <div><strong>Transaction ID:</strong> <?php echo isset($payment_info['transaction_id']) ? $payment_info['transaction_id'] : '-'; ?></div>
                     <div><strong>Payment Date:</strong> <?php echo date('F j, Y', strtotime($payment_info['payment_date'])); ?></div>
                 <?php else: ?>
                     <div><strong>Payment Method:</strong> Online Payment</div>
